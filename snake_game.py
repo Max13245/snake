@@ -16,23 +16,59 @@ class SNAKE:
         self.length = 4
         self.size_x, self.size_y = size_x, size_y
         self.limb_size_x, self.limb_size_y = size_x, size_y
-        self.start_position = (16, 15)
+        self.position = (16 * self.size_x, 15 * self.size_y)
         self.body = []
         self.initiate_body()
 
     def create_limb(self):
-        pass
+        self.length += 1
 
     def initiate_body(self):
         for i in range(self.length):
-            limb = pygame.Rect((self.start_position[0] - i) * self.size_x, 
-                               self.start_position[1] * self.size_y, 
+            limb = pygame.Rect((self.position[0] - i * self.size_x), 
+                               self.position[1], 
                                self.limb_size_x, self.limb_size_y)
             self.body.append(limb)
 
     def draw_snake(self):
         for limb in self.body:
             pygame.draw.ellipse(screen, BLUE, limb)
+    
+    def move_head(self, direction):
+        if direction == "up":
+            self.body[0].move_ip(0, -self.speed)
+        elif direction == "right":
+            self.body[0].move_ip(self.speed, 0)
+        elif direction == "down":
+            self.body[0].move_ip(0, self.speed)
+        elif direction == "left":
+            self.body[0].move_ip(-self.speed, 0)
+
+    def find_direction(self, difference):
+        if difference == 0:
+            return 0
+        elif difference < 0:
+            return -self.speed
+        return self.speed
+
+    def update_limb_direction(self):
+        self.moves = []
+        # Loop through all the body parts except the head 
+        for i in range(1, self.length):
+            x_difference = self.body[i -1].x - self.body[i].x
+            x_change = self.find_direction(x_difference)
+
+            y_difference = self.body[i -1].y - self.body[i].y
+            y_change = self.find_direction(y_difference)
+
+            if x_difference != 0 and y_difference != 0:
+                print("YES")
+
+            self.moves.append((x_change, y_change))
+
+    def move(self):
+        for j in range(1, self.length):
+            self.body[j].move_ip(self.moves[j - 1][0], self.moves[j - 1][1])
 
 class MAP:
     def __init__(self, size):
@@ -44,6 +80,7 @@ class MAP:
         self.apple_possition = (23, 15)
         self.snake = SNAKE(self.x_blocks, self.y_blocks)
         self.last_direction = "right"
+        self.direction = "right"
 
     def create_map(self):
         for i in range(self.block_size):
@@ -81,9 +118,23 @@ class MAP:
         return pygame.transform.scale(apple_img, 
                                       (int(self.x_blocks), 
                                        int(self.y_blocks)))
+    
+    def at_intersection(self):
+        if self.snake.body[0].x % self.x_blocks == 0 and self.snake.body[0].y % self.y_blocks == 0:
+            return True
+        return False
+    
+    def move_snake(self):
+        if self.at_intersection():
+            self.direction = self.last_direction
+            self.snake.update_limb_direction()
+
+        # Move body parts before head
+        self.snake.move()
+        self.snake.move_head(self.direction)
 
     def run_game_loop(self):
-        while True:
+        while(True):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -102,6 +153,7 @@ class MAP:
             screen.fill((0, 0, 0))
             self.draw_map()
             self.show_apple()
+            self.move_snake()
             self.snake.draw_snake()
             pygame.display.update()
             clock.tick(60)
