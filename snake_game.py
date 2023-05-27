@@ -61,9 +61,6 @@ class SNAKE:
             y_difference = self.body[i -1].y - self.body[i].y
             y_change = self.find_direction(y_difference)
 
-            if x_difference != 0 and y_difference != 0:
-                print("YES")
-
             self.moves.append((x_change, y_change))
 
     def move(self):
