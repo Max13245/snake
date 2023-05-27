@@ -21,6 +21,8 @@ class SNAKE:
         self.initiate_body()
 
     def create_limb(self):
+        limb = pygame.Rect(self.body[-1].x, self.body[-1].y, self.limb_size_x, self.limb_size_y)
+        self.body.append(limb)
         self.length += 1
 
     def initiate_body(self):
@@ -110,6 +112,11 @@ class MAP:
     def reposition_apple(self):
         pass
 
+    def apple_overlap(self):
+        if self.apple_possition[0] * self.x_blocks == self.snake.body[0].x and self.apple_possition[1] * self.y_blocks == self.snake.body[0].y:
+            self.snake.create_limb()
+            self.reposition_apple()
+
     def create_apple(self):
         apple_img = pygame.image.load("apple.png")
         return pygame.transform.scale(apple_img, 
@@ -151,6 +158,7 @@ class MAP:
             self.draw_map()
             self.show_apple()
             self.move_snake()
+            self.apple_overlap()
             self.snake.draw_snake()
             pygame.display.update()
             clock.tick(60)
