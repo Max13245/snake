@@ -69,6 +69,13 @@ class SNAKE:
         for j in range(1, self.length):
             self.body[j].move_ip(self.moves[j - 1][0], self.moves[j - 1][1])
 
+    def wall_collision(self):
+        if self.body[0].x <= 0 or self.body[0].x + self.limb_size_x >= width:
+            return True
+        elif self.body[0].y <= 0 or self.body[0].y + self.limb_size_y >= height:
+            return True
+        return False
+
 class MAP:
     def __init__(self, size):
         self.x_blocks, self.y_blocks = width / size, height / size
@@ -160,6 +167,11 @@ class MAP:
             self.move_snake()
             self.apple_overlap()
             self.snake.draw_snake()
+
+            if self.snake.wall_collision():
+                pygame.quit()
+                sys.exit()
+                
             pygame.display.update()
             clock.tick(60)
 
