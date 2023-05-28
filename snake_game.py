@@ -1,4 +1,5 @@
 import pygame, sys
+from random import randint
 
 pygame.init()
 
@@ -13,7 +14,7 @@ BLUE = (8, 77, 161)
 class SNAKE:
     def __init__(self, size_x, size_y):
         self.speed = int(size_x / 10)
-        self.length = 20
+        self.length = 4
         self.size_x, self.size_y = size_x, size_y
         self.limb_size_x, self.limb_size_y = size_x, size_y
         self.position = (16 * self.size_x, 15 * self.size_y)
@@ -83,7 +84,7 @@ class MAP:
         self.tiles = []
         self.smap = self.create_map()
         self.apple = self.create_apple()
-        self.apple_possition = (23, 15)
+        self.apple_possition_x, self.apple_possition_y = 23, 15
         self.snake = SNAKE(self.x_blocks, self.y_blocks)
         self.last_direction = "right"
         self.direction = "right"
@@ -114,13 +115,14 @@ class MAP:
 
     def show_apple(self):
         screen.blit(self.apple, 
-                    self.tiles[self.apple_possition[0]][self.apple_possition[1]][0])
+                    self.tiles[self.apple_possition_x][self.apple_possition_y][0])
 
     def reposition_apple(self):
-        pass
+        self.apple_possition_x = randint(0, (self.block_size - 1))
+        self.apple_possition_y = randint(0, (self.block_size - 1))
 
     def apple_overlap(self):
-        if self.apple_possition[0] * self.x_blocks == self.snake.body[0].x and self.apple_possition[1] * self.y_blocks == self.snake.body[0].y:
+        if self.apple_possition_x * self.x_blocks == self.snake.body[0].x and self.apple_possition_y * self.y_blocks == self.snake.body[0].y:
             self.snake.create_limb()
             self.reposition_apple()
 
