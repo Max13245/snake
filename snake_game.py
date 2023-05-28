@@ -13,7 +13,7 @@ BLUE = (8, 77, 161)
 class SNAKE:
     def __init__(self, size_x, size_y):
         self.speed = int(size_x / 10)
-        self.length = 4
+        self.length = 20
         self.size_x, self.size_y = size_x, size_y
         self.limb_size_x, self.limb_size_y = size_x, size_y
         self.position = (16 * self.size_x, 15 * self.size_y)
@@ -70,9 +70,9 @@ class SNAKE:
             self.body[j].move_ip(self.moves[j - 1][0], self.moves[j - 1][1])
 
     def wall_collision(self):
-        if self.body[0].x <= 0 or self.body[0].x + self.limb_size_x >= width:
+        if self.body[0].x < 0 or self.body[0].x + self.limb_size_x > width:
             return True
-        elif self.body[0].y <= 0 or self.body[0].y + self.limb_size_y >= height:
+        elif self.body[0].y < 0 or self.body[0].y + self.limb_size_y > height:
             return True
         return False
 
@@ -134,10 +134,22 @@ class MAP:
         if self.snake.body[0].x % self.x_blocks == 0 and self.snake.body[0].y % self.y_blocks == 0:
             return True
         return False
+
+    def is_reverse(self, current, new):
+        if current == "up" and new == "down":
+            return True
+        if current == "right" and new == "left":
+            return True
+        if current == "down" and new == "up":
+            return True
+        if current == "left" and new == "right":
+            return True
+        return False
     
     def move_snake(self):
         if self.at_intersection():
-            self.direction = self.last_direction
+            if not self.is_reverse(self.direction, self.last_direction):
+                self.direction = self.last_direction
             self.snake.update_limb_direction()
 
         # Move body parts before head
