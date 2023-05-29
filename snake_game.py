@@ -83,24 +83,13 @@ class SNAKE:
             return True
         return False
     
-    def tangled(self, direction):
-        if direction == "up":
-            for i in range(1, self.length): 
-                if self.body[0].x == self.body[i].x and self.body[0].y - self.limb_size_y == self.body[i].y: 
+    def tangled(self):
+        for i in range(3, self.length):
+            if (self.body[i].y < self.body[0].y < self.body[i].y + self.limb_size_y) or (self.body[i].y < self.body[0].y + self.limb_size_y < self.body[i].y + self.limb_size_y):
+                if self.body[i].x < self.body[0].x < self.body[i].x + self.limb_size_x:
                     return True
-        elif direction == "right":
-            for i in range(1, self.length):
-                if self.body[0].x + self.limb_size_x == self.body[i].x and self.body[0].y == self.body[i].y:
+                if self.body[i].x < self.body[0].x + self.limb_size_x < self.body[i].x + self.limb_size_x:
                     return True
-        elif direction == "down":
-            for i in range(1, self.length):
-                if self.body[0].x == self.body[i].x and self.body[0].y + self.limb_size_y == self.body[i].y:
-                    return True
-        elif direction == "left":
-            for i in range(1, self.length):
-                if self.body[0].x - self.limb_size_x == self.body[i].x and self.body[0].y == self.body[i].y:
-                    return True
-        return False
 
 class MAP:
     def __init__(self, size):
@@ -213,7 +202,7 @@ class MAP:
             self.snake.draw_snake()
             self.show_score()
 
-            if self.snake.wall_collision() or self.snake.tangled(self.direction):
+            if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
                 sys.exit()
                 
