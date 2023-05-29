@@ -11,11 +11,16 @@ clock = pygame.time.Clock()
 GREEN = (19, 145, 57)
 LIGHTGREEN = (48, 176, 86)
 BLUE = (8, 77, 161)
+BLACK = (0, 0, 0)
+
+font = pygame.font.Font("freesansbold.ttf", 32)
+
+start_length = 4
 
 class SNAKE:
     def __init__(self, size_x, size_y):
         self.speed = int(size_x / 10)
-        self.length = 4
+        self.length = start_length
         self.size_x, self.size_y = size_x, size_y
         self.limb_size_x, self.limb_size_y = size_x, size_y
         self.position = (16 * self.size_x, 15 * self.size_y)
@@ -178,6 +183,11 @@ class MAP:
         self.snake.move()
         self.snake.move_head(self.direction)
 
+    def show_score(self):
+        text = font.render(f"Score: {self.snake.length - start_length}", True, BLACK)
+        textRect = text.get_rect()
+        screen.blit(text, textRect)
+
     def run_game_loop(self):
         while(True):
             for event in pygame.event.get():
@@ -201,6 +211,7 @@ class MAP:
             self.move_snake()
             self.apple_overlap()
             self.snake.draw_snake()
+            self.show_score()
 
             if self.snake.wall_collision() or self.snake.tangled(self.direction):
                 pygame.quit()
