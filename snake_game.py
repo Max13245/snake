@@ -217,9 +217,6 @@ class MAP:
         self.last_direction = "right"
         self.direction = "right"
 
-        # For calculating reward for straight lines
-        self.init_straightline_reward_parabola()
-
         # For calculating reward for closing in on apple
         self.apple_reward_radius = 16
         self.maximum_apple_radius_reward = 0.4
@@ -459,42 +456,6 @@ class MAP:
             pygame.display.update()
             clock.tick(60)
 
-    def init_straightline_reward_parabola(self):
-        """This function calculates the reward for straightline,
-        when not a straightline negative reward, when straightline positive reward
-        the longer the line the more reward, until middle of the parabola then the
-        reward will decrease"""
-        self.straight_line_length = 3
-        self.max_straight_reward = 0.1
-        self.parabola_middle = (MAP_SIZE - 2) / 2 + 2
-        self.parabola_x_shape_points = np.array(
-            [
-                # First cut with y-axis
-                [
-                    self.straight_line_length**2,
-                    self.straight_line_length,
-                    1,
-                ],
-                # Second cut with y-axis
-                [
-                    MAP_SIZE**2,
-                    MAP_SIZE,
-                    1,
-                ],
-                # Top of the parabola
-                [
-                    self.parabola_middle**2,
-                    self.parabola_middle,
-                    1,
-                ],
-            ]
-        )
-        self.parabola_y_shape_points = np.array([0, 0, self.max_straight_reward])
-        self.parabola_a, self.parabola_b, self.parabola_c = np.linalg.solve(
-            self.parabola_x_shape_points, self.parabola_y_shape_points
-        )
-        self.prev_directions = []
-
     def get_state(self):
         flat_map_values = np.full(shape=self.block_size * self.block_size, fill_value=1)
 
@@ -539,28 +500,6 @@ class MAP:
                 if event.key == pygame.K_h:
                     self.show_information ^= True
         return False
-
-    def calculate_straightline_index_reward(self, x_reward_index):
-        # Calculate value of reward parabola
-        return (
-            self.parabola_a * x_reward_index**2
-            + self.parabola_b * x_reward_index
-            + self.parabola_c
-        )
-
-    def get_straightline_reward(self):
-        # Get reward index with current straightline length
-        self.prev_directions.append(self.direction)
-        reward_indx = len(self.prev_directions) - 1
-
-        if len(self.prev_directions) == 1:
-            return self.calculate_straightline_index_reward(0)
-
-        # Set prev_directions back to empty when a turn happens
-        if self.prev_directions[-2] != self.prev_directions[-1]:
-            self.prev_directions = []
-
-        return self.calculate_straightline_index_reward(reward_indx)
 
     def get_apple_radius_reward(self, apple_overlap):
         # If apple is recieved in this round then skip radius reward
@@ -644,10 +583,6 @@ class MAP:
 
             if not self.at_intersection():
                 continue
-
-            # Determine other smaller rewards
-            if not (reward >= 1):
-                reward += self.get_straightline_reward()
 
             if not (reward >= 1):
                 reward += self.get_apple_radius_reward(apple_overlap)
