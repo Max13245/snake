@@ -221,6 +221,13 @@ class MAP:
         self.maximum_apple_radius_reward = 0.1
         self.previous_apple_distance = self.calculate_apple_distance()
 
+        # Non apple overlap negative reward
+        # Options:
+        # Everytime it doesn't get an apple 0.2 negative reward
+        # Get negative reward of 1 when no apple overlap in map length moves (30)
+        # Get increasingly big negative reward for not getting an apple overlap
+        self.non_overlap_reward = 0.2
+
         # Info for screen
         self.n_episodes = 1
         self.n_steps = 1
@@ -551,7 +558,9 @@ class MAP:
 
             # Get positive reward when apple overlap happens
             if apple_overlap:
-                reward = 1
+                reward += 1
+            else:
+                reward -= self.non_overlap_reward
 
             # Get negative reward when wall_collision or snake gets tangled
             # TODO: Maybe differenciate between wall and snake collision
@@ -560,7 +569,7 @@ class MAP:
                 self.reset_map()
 
                 observation = None
-                reward = -0.6
+                reward -= 0.6
                 terminated = True
 
             # Game loop mechanics
