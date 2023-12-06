@@ -35,7 +35,7 @@ BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
-EPS_DECAY = 1000
+EPS_DECAY = 10000
 TAU = 0.005
 LR = 1e-4
 N_ACTIONS = 4
@@ -67,14 +67,14 @@ class ReplayMemory(object):
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(MAP_SIZE * MAP_SIZE + 1, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, N_ACTIONS)
+        self.layer1 = nn.Linear(MAP_SIZE * MAP_SIZE + 1, 1024)
+        self.layer2 = nn.Linear(1024, 1024)
+        self.layer3 = nn.Linear(1024, N_ACTIONS)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        x = F.sigmoid(self.layer3(x))
+        x = F.softmax(self.layer3(x))
         return x
 
 
@@ -207,7 +207,7 @@ class MAP:
         self.tiles = []
         self.map = self.create_map()
         self.apple = self.create_apple()
-        self.apple_possition_x, self.apple_possition_y = 23, 15
+        self.reposition_apple()
         self.snake = SNAKE(
             self.x_blocks,
             self.y_blocks,
@@ -222,7 +222,7 @@ class MAP:
 
         # For calculating reward for closing in on apple
         self.apple_reward_radius = 16
-        self.maximum_apple_radius_reward = 6
+        self.maximum_apple_radius_reward = 0.4
         # Logarithmic function: y = a^x
         self.minimum_apple_radius_reward = self.maximum_apple_radius_reward ** (
             1 / self.apple_reward_radius
@@ -465,7 +465,7 @@ class MAP:
         the longer the line the more reward, until middle of the parabola then the
         reward will decrease"""
         self.straight_line_length = 3
-        self.max_straight_reward = 6
+        self.max_straight_reward = 0.1
         self.parabola_middle = (MAP_SIZE - 2) / 2 + 2
         self.parabola_x_shape_points = np.array(
             [
@@ -623,7 +623,7 @@ class MAP:
 
             # Get positive reward when apple overlap happens
             if apple_overlap:
-                reward = 10
+                reward = 1
 
             # Get negative reward when wall_collision or snake gets tangled
             # TODO: Maybe differenciate between wall and snake collision
@@ -632,7 +632,7 @@ class MAP:
                 self.reset_map()
 
                 observation = None
-                reward = -10
+                reward = -0.6
                 terminated = True
 
             # Game loop mechanics
@@ -646,8 +646,11 @@ class MAP:
                 continue
 
             # Determine other smaller rewards
-            reward += self.get_straightline_reward()
-            reward += self.get_apple_radius_reward(apple_overlap)
+            if not (reward >= 1):
+                reward += self.get_straightline_reward()
+
+            if not (reward >= 1):
+                reward += self.get_apple_radius_reward(apple_overlap)
 
             # Create reward tensor
             reward = torch.tensor([reward], device=device)
@@ -754,7 +757,7 @@ class MAP:
 
     def reset_map(self):
         """Reset the map, so pygame.init doesn't have to run every training loop"""
-        self.apple_possition_x, self.apple_possition_y = 23, 15
+        self.reposition_apple()
         self.last_direction = "right"
         self.direction = "right"
         self.n_episodes += 1
