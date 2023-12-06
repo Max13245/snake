@@ -218,12 +218,7 @@ class MAP:
         self.direction = "right"
 
         # For calculating reward for closing in on apple
-        self.apple_reward_radius = 16
-        self.maximum_apple_radius_reward = 0.4
-        # Logarithmic function: y = a^x
-        self.minimum_apple_radius_reward = self.maximum_apple_radius_reward ** (
-            1 / self.apple_reward_radius
-        )
+        self.maximum_apple_radius_reward = 0.1
         self.previous_apple_distance = self.calculate_apple_distance()
 
         # Info for screen
@@ -508,23 +503,17 @@ class MAP:
 
         distance = self.calculate_apple_distance()
 
-        # If snake head not in apple reward radius don't calculate reward
         # If self.previous_apple_distance is at apple location don't calc reward
-        if distance > self.apple_reward_radius or not self.previous_apple_distance:
+        if not self.previous_apple_distance:
             reward = 0
         elif self.previous_apple_distance < distance:
             # Return negative reward
             # Must as big as positive reward, otherwise snake
             # might circle around apple to maximize reward
-            reward = -(
-                self.minimum_apple_radius_reward
-                ** (self.maximum_apple_radius_reward - self.previous_apple_distance)
-            )
+            reward = -self.maximum_apple_radius_reward
         elif distance < self.previous_apple_distance:
             # Return positive reward
-            reward = self.minimum_apple_radius_reward ** (
-                self.maximum_apple_radius_reward - distance
-            )
+            reward = self.maximum_apple_radius_reward
         else:
             reward = 0
 
