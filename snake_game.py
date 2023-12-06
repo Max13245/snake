@@ -35,7 +35,7 @@ BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
-EPS_DECAY = 10000
+EPS_DECAY = 1000
 TAU = 0.005
 LR = 1e-4
 N_ACTIONS = 4
@@ -216,6 +216,7 @@ class MAP:
         )
         self.last_direction = "right"
         self.direction = "right"
+        self.apple_overlap = False
 
         # For calculating reward for closing in on apple
         self.maximum_apple_radius_reward = 0.1
@@ -279,7 +280,7 @@ class MAP:
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
 
-    def apple_overlap(self):
+    def is_apple_overlap(self):
         if (
             self.apple_possition_x * self.x_blocks == self.snake.body[0].x
             and self.apple_possition_y * self.y_blocks == self.snake.body[0].y
@@ -443,13 +444,7 @@ class MAP:
             if truncated:
                 break
 
-            screen.fill((0, 0, 0))
-            self.draw_map()
-            self.show_apple()
-            self.move_snake()
-            self.apple_overlap()
-            self.snake.draw_snake()
-            self.show_info()
+            _ = self.game_mechanics()
 
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
@@ -503,9 +498,9 @@ class MAP:
                     self.show_information ^= True
         return False
 
-    def get_apple_radius_reward(self, apple_overlap):
+    def get_apple_radius_reward(self):
         # If apple is recieved in this round then skip radius reward
-        if apple_overlap:
+        if self.apple_overlap:
             return 0
 
         distance = self.calculate_apple_distance()
@@ -527,8 +522,25 @@ class MAP:
         self.previous_apple_distance = distance
         return reward
 
+    def game_mechanics(self):
+        screen.fill((0, 0, 0))
+        self.draw_map()
+        self.show_apple()
+        self.move_snake()
+        self.apple_overlap = self.is_apple_overlap()
+        self.snake.draw_snake()
+        self.show_info()
+
     def run_autonomous_game_loop(self):
         while True:
+            if not self.at_intersection():
+                self.game_mechanics()
+
+                # Game loop mechanics
+                pygame.display.update()
+                clock.tick(60)
+                continue
+
             # Get state and format it into a tensor
             state = self.get_state()
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
@@ -542,13 +554,7 @@ class MAP:
                 break
 
             # Game loop mechanics
-            screen.fill((0, 0, 0))
-            self.draw_map()
-            self.show_apple()
-            self.move_snake()
-            apple_overlap = self.apple_overlap()
-            self.snake.draw_snake()
-            self.show_info()
+            self.game_mechanics()
 
             # Transition init data
             observation = self.get_state()
@@ -557,7 +563,7 @@ class MAP:
             truncated = False
 
             # Get positive reward when apple overlap happens
-            if apple_overlap:
+            if self.apple_overlap:
                 reward += 1
             else:
                 reward -= self.non_overlap_reward
@@ -579,11 +585,8 @@ class MAP:
             # One step done
             self.n_steps += 1
 
-            if not self.at_intersection():
-                continue
-
             if not (reward >= 1):
-                reward += self.get_apple_radius_reward(apple_overlap)
+                reward += self.get_apple_radius_reward()
 
             # Create reward tensor
             reward = torch.tensor([reward], device=device)
