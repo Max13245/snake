@@ -8,6 +8,8 @@ import torch.nn.functional as F
 
 import numpy as np
 import math
+from collections import namedtuple
+
 
 pygame.init()
 pygame.display.set_caption("Snake")
@@ -36,6 +38,10 @@ EPS_DECAY = 1000
 TAU = 0.005
 LR = 1e-4
 N_ACTIONS = 4
+
+N_EPISODES = 128
+
+Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
 # If GPU available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -76,7 +82,9 @@ class SNAKE:
             self.target_net = DQN().to(device)
             self.target_net.load_state_dict(self.policy_net.state_dict())
 
-            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
+            self.optimizer = optim.AdamW(
+                self.policy_net.parameters(), lr=LR, amsgrad=True
+            )
 
         self.speed = int(size_x / 10)
         self.length = start_length
@@ -279,17 +287,9 @@ class MAP:
                 elif event.key == pygame.K_LEFT:
                     self.last_direction = "left"
 
-    def AI_control(self):
-        pass
-
-    def run_game_loop(self):
-        if self.autonomous.lower() == "y":
-            move_function = self.AI_control
-        else:
-            move_function = self.user_control
-
+    def run_user_game_loop(self):
         while True:
-            move_function()
+            self.user_control()
 
             screen.fill((0, 0, 0))
             self.draw_map()
@@ -305,6 +305,13 @@ class MAP:
 
             pygame.display.update()
             clock.tick(60)
+
+    def AI_control(self):
+        pass
+
+    def run_autonomous_game_loop(self):
+        while True:
+            pass
 
 
 steps_done = 0
@@ -326,5 +333,51 @@ def select_action(state, policy_net):
 
 
 autonomous = input("Autonomous: ")
-snake_map = MAP(MAP_SIZE, autonomous)
-snake_map.run_game_loop(autonomous)
+if not autonomous:
+    snake_map = MAP(MAP_SIZE, autonomous)
+    snake_map.run_user_game_loop(autonomous)
+else:
+    for i_episode in range(N_EPISODES):
+        # Initialize the environment and get it's state
+        snake_map = MAP(MAP_SIZE, autonomous)
+        state = snake_map.run_autonomous_game_loop()
+        state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        while True:
+            action = select_action(state)
+            (
+                observation,
+                reward,
+                terminated,
+                truncated,
+                _,
+            ) = snake_map.run_autonomous_game_loop(action)
+            reward = torch.tensor([reward], device=device)
+
+            if terminated:
+                next_state = None
+            else:
+                next_state = torch.tensor(
+                    observation, dtype=torch.float32, device=device
+                ).unsqueeze(0)
+
+            # Create a transition
+            step_data = Transition(state, action, next_state, reward)
+
+            # Move to the next state
+            state = next_state
+
+            # Perform one step of the optimization (on the policy network)
+            optimize_model(step_data)
+
+            # Soft update of the target network's weights
+            # θ′ ← τ θ + (1 −τ )θ′
+            target_net_state_dict = snake_map.snake.target_net.state_dict()
+            policy_net_state_dict = snake_map.snake.policy_net.state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[
+                    key
+                ] * TAU + target_net_state_dict[key] * (1 - TAU)
+            snake_map.snake.target_net.load_state_dict(target_net_state_dict)
+
+            if terminated or truncated:
+                break
