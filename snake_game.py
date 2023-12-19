@@ -16,6 +16,8 @@ BLACK = (0, 0, 0)
 font = pygame.font.Font("freesansbold.ttf", 32)
 
 start_length = 4
+MAP_SIZE = 30
+
 
 class SNAKE:
     def __init__(self, size_x, size_y):
@@ -28,21 +30,26 @@ class SNAKE:
         self.initiate_body()
 
     def create_limb(self):
-        limb = pygame.Rect(self.body[-1].x, self.body[-1].y, self.limb_size_x, self.limb_size_y)
+        limb = pygame.Rect(
+            self.body[-1].x, self.body[-1].y, self.limb_size_x, self.limb_size_y
+        )
         self.body.append(limb)
         self.length += 1
 
     def initiate_body(self):
         for i in range(self.length):
-            limb = pygame.Rect((self.position[0] - i * self.size_x), 
-                               self.position[1], 
-                               self.limb_size_x, self.limb_size_y)
+            limb = pygame.Rect(
+                (self.position[0] - i * self.size_x),
+                self.position[1],
+                self.limb_size_x,
+                self.limb_size_y,
+            )
             self.body.append(limb)
 
     def draw_snake(self):
         for limb in self.body:
             pygame.draw.ellipse(screen, BLUE, limb)
-    
+
     def move_head(self, direction):
         if direction == "up":
             self.body[0].move_ip(0, -self.speed)
@@ -62,12 +69,12 @@ class SNAKE:
 
     def update_limb_direction(self):
         self.moves = []
-        # Loop through all the body parts except the head 
+        # Loop through all the body parts except the head
         for i in range(1, self.length):
-            x_difference = self.body[i -1].x - self.body[i].x
+            x_difference = self.body[i - 1].x - self.body[i].x
             x_change = self.find_direction(x_difference)
 
-            y_difference = self.body[i -1].y - self.body[i].y
+            y_difference = self.body[i - 1].y - self.body[i].y
             y_change = self.find_direction(y_difference)
 
             self.moves.append((x_change, y_change))
@@ -82,14 +89,25 @@ class SNAKE:
         elif self.body[0].y < 0 or self.body[0].y + self.limb_size_y > height:
             return True
         return False
-    
+
     def tangled(self):
         for i in range(3, self.length):
-            if (self.body[i].y < self.body[0].y < self.body[i].y + self.limb_size_y) or (self.body[i].y < self.body[0].y + self.limb_size_y < self.body[i].y + self.limb_size_y):
+            if (
+                self.body[i].y < self.body[0].y < self.body[i].y + self.limb_size_y
+            ) or (
+                self.body[i].y
+                < self.body[0].y + self.limb_size_y
+                < self.body[i].y + self.limb_size_y
+            ):
                 if self.body[i].x < self.body[0].x < self.body[i].x + self.limb_size_x:
                     return True
-                if self.body[i].x < self.body[0].x + self.limb_size_x < self.body[i].x + self.limb_size_x:
+                if (
+                    self.body[i].x
+                    < self.body[0].x + self.limb_size_x
+                    < self.body[i].x + self.limb_size_x
+                ):
                     return True
+
 
 class MAP:
     def __init__(self, size):
@@ -107,8 +125,12 @@ class MAP:
         for i in range(self.block_size):
             row = []
             for j in range(self.block_size):
-                tile = pygame.Rect(i * self.block_size, j * self.block_size, 
-                                   self.x_blocks, self.y_blocks)
+                tile = pygame.Rect(
+                    i * self.block_size,
+                    j * self.block_size,
+                    self.x_blocks,
+                    self.y_blocks,
+                )
                 if i % 2 == 0:
                     if j % 2 == 0:
                         row.append((tile, LIGHTGREEN))
@@ -119,7 +141,7 @@ class MAP:
                         row.append((tile, GREEN))
                     else:
                         row.append((tile, LIGHTGREEN))
-                
+
             self.tiles.append(row)
 
     def draw_map(self):
@@ -128,26 +150,33 @@ class MAP:
                 pygame.draw.rect(screen, tile[1], tile[0])
 
     def show_apple(self):
-        screen.blit(self.apple, 
-                    self.tiles[self.apple_possition_x][self.apple_possition_y][0])
+        screen.blit(
+            self.apple, self.tiles[self.apple_possition_x][self.apple_possition_y][0]
+        )
 
     def reposition_apple(self):
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
 
     def apple_overlap(self):
-        if self.apple_possition_x * self.x_blocks == self.snake.body[0].x and self.apple_possition_y * self.y_blocks == self.snake.body[0].y:
+        if (
+            self.apple_possition_x * self.x_blocks == self.snake.body[0].x
+            and self.apple_possition_y * self.y_blocks == self.snake.body[0].y
+        ):
             self.snake.create_limb()
             self.reposition_apple()
 
     def create_apple(self):
         apple_img = pygame.image.load("apple.png")
-        return pygame.transform.scale(apple_img, 
-                                      (int(self.x_blocks), 
-                                       int(self.y_blocks)))
-    
+        return pygame.transform.scale(
+            apple_img, (int(self.x_blocks), int(self.y_blocks))
+        )
+
     def at_intersection(self):
-        if self.snake.body[0].x % self.x_blocks == 0 and self.snake.body[0].y % self.y_blocks == 0:
+        if (
+            self.snake.body[0].x % self.x_blocks == 0
+            and self.snake.body[0].y % self.y_blocks == 0
+        ):
             return True
         return False
 
@@ -161,7 +190,7 @@ class MAP:
         if current == "left" and new == "right":
             return True
         return False
-    
+
     def move_snake(self):
         if self.at_intersection():
             if not self.is_reverse(self.direction, self.last_direction):
@@ -177,12 +206,15 @@ class MAP:
         textRect = text.get_rect()
         screen.blit(text, textRect)
 
-    def run_game_loop(self):
-        while(True):
+    def run_game_loop(self, autonomous):
+        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
+                if autonomous.lower() == "y":
+                    break
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
@@ -205,9 +237,11 @@ class MAP:
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
                 sys.exit()
-                
+
             pygame.display.update()
             clock.tick(60)
 
-snake_map = MAP(30)
-snake_map.run_game_loop()
+
+snake_map = MAP(MAP_SIZE)
+autonomous = input("Autonomous: ")
+snake_map.run_game_loop(autonomous)
