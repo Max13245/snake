@@ -74,10 +74,9 @@ class SNAKE:
                 4 = Left
             2. Every square has a value
                 1 = Nothing on square
-                2 = Apple on square
-                3 = Snake body without turn on square
-                4 = Snake body with turn on square
-                5 = Snake head on square
+                2 = Snake body on square
+                3 = Snake head on square
+                4 = Apple on square
             """
             self.policy_net = DQN().to(device)
             self.target_net = DQN().to(device)
@@ -181,7 +180,7 @@ class MAP:
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
         self.tiles = []
-        self.smap = self.create_map()
+        self.map = self.create_map()
         self.apple = self.create_apple()
         self.apple_possition_x, self.apple_possition_y = 23, 15
         self.snake = SNAKE(self.x_blocks, self.y_blocks, self.autonomous)
@@ -304,10 +303,37 @@ class MAP:
 
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
-                sys.exit()
 
             pygame.display.update()
             clock.tick(60)
+
+    def get_state(self):
+        flat_map_values = np.full(shape=self.block_size ^ 2, fill_value=1, dtype=np.int)
+
+        # Set all body values on flat map to 2
+        for limb_indx in range(1, len(self.snake.body)):
+            flat_map_values[
+                self.snake.body[limb_indx].x / self.x_blocks
+                + (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
+            ] = 2
+
+        # Set head value to 3 on flat map
+        flat_map_values[
+            self.snake.body[0].x / self.x_blocks
+            + (self.snake.body[0].y / self.y_blocks - 1) * self.block_size
+        ] = 3
+
+        # Set apple value to 4 on flat map
+        flat_map_values[
+            self.apple_possition_x + (self.apple_possition_y - 1) * self.block_size
+        ] = 4
+
+        # Append current direction (as a number from 1 to 4)
+        state = np.concatenate(
+            flat_map_values, [ACTION_OPTIONS.index(self.last_direction) + 1]
+        )
+
+        return state
 
     def AI_control(self, action):
         direction_index = np.argmax(action)
@@ -326,7 +352,7 @@ class MAP:
             self.show_score()
 
             if apple_overlap:
-                yield (new_state, 10, False, False)
+                yield (self.get_state(), 10, False, False)
 
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
@@ -334,7 +360,7 @@ class MAP:
 
             pygame.display.update()
             clock.tick(60)
-            yield (new_state, 0, False, False)
+            yield (self.get_state(), 0, False, False)
 
 
 steps_done = 0
