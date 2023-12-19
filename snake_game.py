@@ -6,6 +6,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+import numpy as np
+import math
+
 pygame.init()
 pygame.display.set_caption("Snake")
 
@@ -20,24 +23,39 @@ BLACK = (0, 0, 0)
 
 font = pygame.font.Font("freesansbold.ttf", 32)
 
+# Game Config
 start_length = 4
 MAP_SIZE = 30
 
+# NN Config
+BATCH_SIZE = 128
+GAMMA = 0.99
+EPS_START = 0.9
+EPS_END = 0.05
+EPS_DECAY = 1000
+TAU = 0.005
+LR = 1e-4
+N_ACTIONS = 4
+
+# If GPU available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class DQN(nn.Module):
-    def __init__(self, n_actions):
+    def __init__(self):
         super(DQN, self).__init__()
         self.layer1 = nn.Linear(MAP_SIZE ^ 2 + 1, 128)
         self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, n_actions)
+        self.layer3 = nn.Linear(128, N_ACTIONS)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        return self.layer3(x)
+        x = F.sigmoid(self.layer3(x))
+        return x
 
 
-class SNAKE(DQN):
+class SNAKE:
     def __init__(self, size_x, size_y, autonomous):
         if autonomous:
             """
@@ -54,7 +72,11 @@ class SNAKE(DQN):
                 4 = Snake body with turn on square
                 5 = Snake head on square
             """
-            super(SNAKE, self).__init__(4)
+            self.policy_net = DQN().to(device)
+            self.target_net = DQN().to(device)
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+
+            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
 
         self.speed = int(size_x / 10)
         self.length = start_length
@@ -283,6 +305,24 @@ class MAP:
 
             pygame.display.update()
             clock.tick(60)
+
+
+steps_done = 0
+
+
+def select_action(state, policy_net):
+    sample = np.random.random()
+    eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
+        -1.0 * steps_done / EPS_DECAY
+    )
+    steps_done += 1
+    if sample > eps_threshold:
+        with torch.no_grad():
+            # Will return a list of sigmoid values
+            return policy_net(state)
+    else:
+        # Return random values to explore new possibilities
+        return np.array(np.random.random_sample(4))
 
 
 autonomous = input("Autonomous: ")
