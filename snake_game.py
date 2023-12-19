@@ -1,6 +1,11 @@
 import pygame, sys
 from random import randint
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+
 pygame.init()
 pygame.display.set_caption("Snake")
 
@@ -19,8 +24,38 @@ start_length = 4
 MAP_SIZE = 30
 
 
-class SNAKE:
-    def __init__(self, size_x, size_y):
+class DQN(nn.Module):
+    def __init__(self, n_actions):
+        super(DQN, self).__init__()
+        self.layer1 = nn.Linear(MAP_SIZE ^ 2 + 1, 128)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, n_actions)
+
+    def forward(self, x):
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        return self.layer3(x)
+
+
+class SNAKE(DQN):
+    def __init__(self, size_x, size_y, autonomous):
+        if autonomous:
+            """
+            NN inputs:
+            1. Current direction
+                1 = Up
+                2 = Right
+                3 = Down
+                4 = Left
+            2. Every square has a value
+                1 = Nothing on square
+                2 = Apple on square
+                3 = Snake body without turn on square
+                4 = Snake body with turn on square
+                5 = Snake head on square
+            """
+            super(SNAKE, self).__init__(4)
+
         self.speed = int(size_x / 10)
         self.length = start_length
         self.size_x, self.size_y = size_x, size_y
@@ -110,14 +145,15 @@ class SNAKE:
 
 
 class MAP:
-    def __init__(self, size):
+    def __init__(self, size, autonomous):
+        self.autonomous = autonomous
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
         self.tiles = []
         self.smap = self.create_map()
         self.apple = self.create_apple()
         self.apple_possition_x, self.apple_possition_y = 23, 15
-        self.snake = SNAKE(self.x_blocks, self.y_blocks)
+        self.snake = SNAKE(self.x_blocks, self.y_blocks, self.autonomous)
         self.last_direction = "right"
         self.direction = "right"
 
@@ -206,25 +242,32 @@ class MAP:
         textRect = text.get_rect()
         screen.blit(text, textRect)
 
-    def run_game_loop(self, autonomous):
+    def user_control(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    self.last_direction = "up"
+                elif event.key == pygame.K_RIGHT:
+                    self.last_direction = "right"
+                elif event.key == pygame.K_DOWN:
+                    self.last_direction = "down"
+                elif event.key == pygame.K_LEFT:
+                    self.last_direction = "left"
+
+    def AI_control(self):
+        pass
+
+    def run_game_loop(self):
+        if self.autonomous.lower() == "y":
+            move_function = self.AI_control
+        else:
+            move_function = self.user_control
+
         while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                if autonomous.lower() == "y":
-                    break
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.last_direction = "up"
-                    elif event.key == pygame.K_RIGHT:
-                        self.last_direction = "right"
-                    elif event.key == pygame.K_DOWN:
-                        self.last_direction = "down"
-                    elif event.key == pygame.K_LEFT:
-                        self.last_direction = "left"
+            move_function()
 
             screen.fill((0, 0, 0))
             self.draw_map()
@@ -242,6 +285,6 @@ class MAP:
             clock.tick(60)
 
 
-snake_map = MAP(MAP_SIZE)
 autonomous = input("Autonomous: ")
+snake_map = MAP(MAP_SIZE, autonomous)
 snake_map.run_game_loop(autonomous)
