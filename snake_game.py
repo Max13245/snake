@@ -39,6 +39,7 @@ TAU = 0.005
 LR = 1e-4
 N_ACTIONS = 4
 
+ACTION_OPTIONS = ["up", "right", "down", "left"]
 N_EPISODES = 128
 
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
@@ -231,6 +232,8 @@ class MAP:
         ):
             self.snake.create_limb()
             self.reposition_apple()
+            return True
+        return False
 
     def create_apple(self):
         apple_img = pygame.image.load("apple.png")
@@ -306,12 +309,32 @@ class MAP:
             pygame.display.update()
             clock.tick(60)
 
-    def AI_control(self):
-        pass
+    def AI_control(self, action):
+        direction_index = np.argmax(action)
+        self.direction = ACTION_OPTIONS[direction_index]
 
-    def run_autonomous_game_loop(self):
+    def run_autonomous_game_loop(self, action):
         while True:
-            pass
+            self.AI_control(action)
+
+            screen.fill((0, 0, 0))
+            self.draw_map()
+            self.show_apple()
+            self.move_snake()
+            apple_overlap = self.apple_overlap()
+            self.snake.draw_snake()
+            self.show_score()
+
+            if apple_overlap:
+                yield (new_state, 10, False, False)
+
+            if self.snake.wall_collision() or self.snake.tangled():
+                pygame.quit()
+                yield (None, -10, True, False)
+
+            pygame.display.update()
+            clock.tick(60)
+            yield (new_state, 0, False, False)
 
 
 steps_done = 0
