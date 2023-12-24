@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame
 from random import randint
 
 import torch
