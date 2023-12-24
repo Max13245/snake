@@ -520,3 +520,6 @@ else:
     for i_episode in range(N_EPISODES):
         # Initialize the environment and get it's state
         snake_map.run_autonomous_game_loop()
+
+    # Only quit pygame after the entire training loop is done
+    pygame.quit()
