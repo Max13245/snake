@@ -57,7 +57,6 @@ class ReplayMemory(object):
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
-        print(len(self.memory))
         return sample(self.memory, batch_size)
 
     def __len__(self):
@@ -501,7 +500,6 @@ class MAP:
 
     def reset_map(self):
         """Reset the map, so pygame.init doesn't have to run every training loop"""
-        self.tiles = []
         self.apple_possition_x, self.apple_possition_y = 23, 15
         self.last_direction = "right"
         self.direction = "right"
