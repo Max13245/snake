@@ -202,7 +202,7 @@ class MAP:
         self.snake = SNAKE(self.x_blocks, self.y_blocks, self.autonomous)
         self.last_direction = "right"
         self.direction = "right"
-        self.steps_done = 0
+        self.n_episodes = 1
 
     def create_map(self):
         for i in range(self.block_size):
@@ -391,7 +391,9 @@ class MAP:
             # Get negative reward when wall_collision or snake gets tangled
             # TODO: Maybe differenciate between wall and snake collision
             if self.snake.wall_collision() or self.snake.tangled():
-                pygame.quit()
+                # Use reset map instead of pygame.quit()
+                self.reset_map()
+
                 observation = None
                 reward = -10
                 terminated = True
@@ -435,9 +437,9 @@ class MAP:
     def select_action(self, state):
         sample = np.random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
-            -1.0 * self.steps_done / EPS_DECAY
+            -1.0 * self.n_episodes / EPS_DECAY
         )
-        self.steps_done += 1
+        self.n_episodes += 1
         if sample > eps_threshold:
             with torch.no_grad():
                 # Will return a list of sigmoid values
@@ -495,6 +497,14 @@ class MAP:
         torch.nn.utils.clip_grad_value_(self.snake.policy_net.parameters(), 100)
         self.snake.optimizer.step()
 
+    def reset_map(self):
+        """Reset the map, so pygame.init doesn't have to run every training loop"""
+        self.tiles = []
+        self.apple_possition_x, self.apple_possition_y = 23, 15
+        self.last_direction = "right"
+        self.direction = "right"
+        self.n_episodes += 1
+
 
 # TODO: Temporary static statement
 # autonomous = input("Autonomous: ")
@@ -503,7 +513,8 @@ if not autonomous:
     snake_map = MAP(MAP_SIZE, autonomous)
     snake_map.run_user_game_loop(autonomous)
 else:
+    # Only init one time, since policy network is inside
+    snake_map = MAP(MAP_SIZE, autonomous)
     for i_episode in range(N_EPISODES):
         # Initialize the environment and get it's state
-        snake_map = MAP(MAP_SIZE, autonomous)
         snake_map.run_autonomous_game_loop()
