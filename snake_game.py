@@ -57,6 +57,7 @@ class ReplayMemory(object):
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
+        print(len(self.memory))
         return sample(self.memory, batch_size)
 
     def __len__(self):
@@ -419,6 +420,9 @@ class MAP:
             # Move to the next state
             state = next_state
 
+            # Perform one step of the optimization (on the policy network)
+            self.optimize_model()
+
             # Soft update of the target network's weights
             target_net_state_dict = self.snake.target_net.state_dict()
             policy_net_state_dict = self.snake.policy_net.state_dict()
@@ -430,9 +434,6 @@ class MAP:
 
             if terminated or truncated:
                 break
-
-        # Perform one step of the optimization (on the policy network)
-        self.optimize_model()
 
     def select_action(self, state):
         sample = np.random.random()
@@ -449,10 +450,11 @@ class MAP:
             return np.array(np.random.random_sample(4))
 
     def optimize_model(self):
+        if len(self.snake.memory) < BATCH_SIZE:
+            return
         transitions = self.snake.memory.sample(BATCH_SIZE)
-        # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation). This converts batch-array of Transitions
-        # to Transition of batch-arrays.
+
+        # Transpose the batch
         batch = Transition(*zip(*transitions))
         # Compute a mask of non-final states and concatenate the batch elements
         # (a final state would've been the one after which simulation ended)
