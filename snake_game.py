@@ -356,13 +356,17 @@ class MAP:
         direction_index = np.argmax(action)
         self.direction = ACTION_OPTIONS[direction_index]
 
-    def run_autonomous_game_loop(self, action=None):
-        if action == None:
-            state = self.get_state()
-            action = self.select_action(state)
+    def run_autonomous_game_loop(self):
         while True:
+            # Get state and format it into a tensor
+            state = self.get_state()
+            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+
+            # Get and perform an action
+            action = snake_map.select_action(state)
             self.AI_control(action)
 
+            # Game loop mechanics
             screen.fill((0, 0, 0))
             self.draw_map()
             self.show_apple()
@@ -371,16 +375,59 @@ class MAP:
             self.snake.draw_snake()
             self.show_score()
 
-            if apple_overlap:
-                yield (self.get_state(), 10, False, False)
+            # Transition init data
+            observation = self.get_state()
+            reward = 0
+            terminated = False
+            truncated = False
 
+            # Get positive reward when apple overlap happens
+            if apple_overlap:
+                reward = 10
+
+            # Get negative reward when wall_collision or snake gets tangled
+            # TODO: Maybe differenciate between wall and snake collision
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
-                yield (None, -10, True, False)
+                observation = None
+                reward = -10
+                terminated = True
 
+            # Game loop mechanics
             pygame.display.update()
             clock.tick(60)
-            yield (self.get_state(), 0, False, False)
+
+            # Create reward tensor
+            reward = torch.tensor([reward], device=device)
+
+            # Get next state
+            if terminated:
+                next_state = None
+            else:
+                next_state = torch.tensor(
+                    observation, dtype=torch.float32, device=device
+                ).unsqueeze(0)
+
+            # Create a transition
+            self.memory.push(state, action, next_state, reward)
+
+            # Move to the next state
+            state = next_state
+
+            # Soft update of the target network's weights
+            target_net_state_dict = self.snake.target_net.state_dict()
+            policy_net_state_dict = self.snake.policy_net.state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[
+                    key
+                ] * TAU + target_net_state_dict[key] * (1 - TAU)
+            self.snake.target_net.load_state_dict(target_net_state_dict)
+
+            if terminated or truncated:
+                break
+
+        # Perform one step of the optimization (on the policy network)
+        self.optimize_model()
 
     def select_action(self, state):
         sample = np.random.random()
@@ -397,8 +444,6 @@ class MAP:
             return np.array(np.random.random_sample(4))
 
     def optimize_model(self):
-        if len(self.memory) < BATCH_SIZE:
-            return
         transitions = self.memory.sample(BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
@@ -456,44 +501,4 @@ else:
     for i_episode in range(N_EPISODES):
         # Initialize the environment and get it's state
         snake_map = MAP(MAP_SIZE, autonomous)
-        state = snake_map.run_autonomous_game_loop()
-        state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-        while True:
-            action = snake_map.select_action(state)
-            (
-                observation,
-                reward,
-                terminated,
-                truncated,
-                _,
-            ) = snake_map.run_autonomous_game_loop(action)
-            reward = torch.tensor([reward], device=device)
-
-            if terminated:
-                next_state = None
-            else:
-                next_state = torch.tensor(
-                    observation, dtype=torch.float32, device=device
-                ).unsqueeze(0)
-
-            # Create a transition
-            snake_map.memory.push(state, action, next_state, reward)
-
-            # Move to the next state
-            state = next_state
-
-            # Perform one step of the optimization (on the policy network)
-            snake_map.optimize_model()
-
-            # Soft update of the target network's weights
-            # θ′ ← τ θ + (1 −τ )θ′
-            target_net_state_dict = snake_map.snake.target_net.state_dict()
-            policy_net_state_dict = snake_map.snake.policy_net.state_dict()
-            for key in policy_net_state_dict:
-                target_net_state_dict[key] = policy_net_state_dict[
-                    key
-                ] * TAU + target_net_state_dict[key] * (1 - TAU)
-            snake_map.snake.target_net.load_state_dict(target_net_state_dict)
-
-            if terminated or truncated:
-                break
+        snake_map.run_autonomous_game_loop()
