@@ -412,7 +412,7 @@ class MAP:
                 ).unsqueeze(0)
 
             # Create a transition
-            self.memory.push(state, action, next_state, reward)
+            self.snake.memory.push(state, action, next_state, reward)
 
             # Move to the next state
             state = next_state
@@ -447,7 +447,7 @@ class MAP:
             return np.array(np.random.random_sample(4))
 
     def optimize_model(self):
-        transitions = self.memory.sample(BATCH_SIZE)
+        transitions = self.snake.memory.sample(BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
         # to Transition of batch-arrays.
@@ -469,7 +469,7 @@ class MAP:
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to policy_net
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+        state_action_values = self.snake.policy_net(state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
@@ -479,7 +479,7 @@ class MAP:
         next_state_values = torch.zeros(BATCH_SIZE, device=device)
         with torch.no_grad():
             next_state_values[non_final_mask] = (
-                self.target_net(non_final_next_states).max(1).values
+                self.snake.target_net(non_final_next_states).max(1).values
             )
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * GAMMA) + reward_batch
@@ -489,11 +489,11 @@ class MAP:
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 
         # Optimize the model
-        self.optimizer.zero_grad()
+        self.snake.optimizer.zero_grad()
         loss.backward()
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
-        self.optimizer.step()
+        torch.nn.utils.clip_grad_value_(self.snake.policy_net.parameters(), 100)
+        self.snake.optimizer.step()
 
 
 # TODO: Temporary static statement
