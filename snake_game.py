@@ -66,7 +66,7 @@ class ReplayMemory(object):
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(MAP_SIZE ^ 2 + 1, 128)
+        self.layer1 = nn.Linear(MAP_SIZE * MAP_SIZE + 1, 128)
         self.layer2 = nn.Linear(128, 128)
         self.layer3 = nn.Linear(128, N_ACTIONS)
 
