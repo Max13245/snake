@@ -441,7 +441,7 @@ class MAP:
         if sample > eps_threshold:
             with torch.no_grad():
                 # Will return a list of sigmoid values
-                return self.policy_net(state)
+                return self.snake.policy_net(state)
         else:
             # Return random values to explore new possibilities
             return np.array(np.random.random_sample(4))
