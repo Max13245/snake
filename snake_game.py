@@ -1,5 +1,5 @@
 import pygame
-from random import randint
+from random import randint, sample
 
 import torch
 import torch.nn as nn
@@ -57,7 +57,7 @@ class ReplayMemory(object):
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
-        return np.random.sample(self.memory, batch_size)
+        return sample(self.memory, batch_size)
 
     def __len__(self):
         return len(self.memory)
