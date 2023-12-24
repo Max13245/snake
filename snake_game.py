@@ -325,29 +325,32 @@ class MAP:
             clock.tick(60)
 
     def get_state(self):
-        flat_map_values = np.full(shape=self.block_size ^ 2, fill_value=1, dtype=np.int)
+        flat_map_values = np.full(shape=self.block_size * self.block_size, fill_value=1)
 
         # Set all body values on flat map to 2
         for limb_indx in range(1, len(self.snake.body)):
-            flat_map_values[
+            limb_location = int(
                 self.snake.body[limb_indx].x / self.x_blocks
                 + (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
-            ] = 2
+            )
+            flat_map_values[limb_location] = 2
 
         # Set head value to 3 on flat map
-        flat_map_values[
+        head_location = int(
             self.snake.body[0].x / self.x_blocks
             + (self.snake.body[0].y / self.y_blocks - 1) * self.block_size
-        ] = 3
+        )
+        flat_map_values[head_location] = 3
 
         # Set apple value to 4 on flat map
-        flat_map_values[
+        apple_location = int(
             self.apple_possition_x + (self.apple_possition_y - 1) * self.block_size
-        ] = 4
+        )
+        flat_map_values[apple_location] = 4
 
         # Append current direction (as a number from 1 to 4)
-        state = np.concatenate(
-            flat_map_values, [ACTION_OPTIONS.index(self.last_direction) + 1]
+        state = np.append(
+            flat_map_values, ACTION_OPTIONS.index(self.last_direction) + 1
         )
 
         return state
@@ -493,7 +496,9 @@ class MAP:
         self.optimizer.step()
 
 
-autonomous = input("Autonomous: ")
+# TODO: Temporary static statement
+# autonomous = input("Autonomous: ")
+autonomous = True
 if not autonomous:
     snake_map = MAP(MAP_SIZE, autonomous)
     snake_map.run_user_game_loop(autonomous)
