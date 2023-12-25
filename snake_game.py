@@ -26,7 +26,7 @@ BLACK = (0, 0, 0)
 font = pygame.font.Font("freesansbold.ttf", 32)
 
 # Game Config
-start_length = 4
+START_LENGTH = 4
 MAP_SIZE = 30
 
 # NN Config
@@ -103,7 +103,7 @@ class SNAKE:
             self.memory = ReplayMemory(10000)
 
         self.speed = int(size_x / 10)
-        self.length = start_length
+        self.length = START_LENGTH
         self.size_x, self.size_y = size_x, size_y
         self.limb_size_x, self.limb_size_y = size_x, size_y
         self.position = (16 * self.size_x, 15 * self.size_y)
@@ -287,7 +287,7 @@ class MAP:
         self.snake.move_head(self.direction)
 
     def show_score(self):
-        text = font.render(f"Score: {self.snake.length - start_length}", True, BLACK)
+        text = font.render(f"Score: {self.snake.length - START_LENGTH}", True, BLACK)
         textRect = text.get_rect()
         screen.blit(text, textRect)
 
@@ -295,6 +295,7 @@ class MAP:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                return True
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -306,9 +307,13 @@ class MAP:
                 elif event.key == pygame.K_LEFT:
                     self.last_direction = "left"
 
+        return False
+
     def run_user_game_loop(self):
         while True:
-            self.user_control()
+            truncated = self.user_control()
+            if truncated:
+                break
 
             screen.fill((0, 0, 0))
             self.draw_map()
@@ -357,6 +362,11 @@ class MAP:
 
     def AI_control(self, action):
         self.direction = ACTION_OPTIONS[action]
+
+        # Check for quit event
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
 
     def run_autonomous_game_loop(self):
         while True:
@@ -509,12 +519,10 @@ class MAP:
         self.n_episodes += 1
 
 
-# TODO: Temporary static statement
-# autonomous = input("Autonomous: ")
-autonomous = True
+autonomous = input("Autonomous: ")
 if not autonomous:
     snake_map = MAP(MAP_SIZE, autonomous)
-    snake_map.run_user_game_loop(autonomous)
+    snake_map.run_user_game_loop()
 else:
     # Only init one time, since policy network is inside
     snake_map = MAP(MAP_SIZE, autonomous)
