@@ -585,6 +585,13 @@ else:
     # Save model
     models_path = "./models/"
     n_models = get_n_models(models_path)
+
+    if quit_event:
+        model_suffix = "_incomplete"
+    else:
+        model_prefix = ""
+
     torch.save(
-        snake_map.snake.policy_net.state_dict(), f"{models_path}model_{n_models}"
+        snake_map.snake.policy_net.state_dict(),
+        f"{models_path}model_{n_models}{model_suffix}",
     )
