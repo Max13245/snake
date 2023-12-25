@@ -446,8 +446,8 @@ class MAP:
         else:
             # Return random values to explore new possibilities
             return (
-                torch.tensor(np.array([np.random.random_sample(4)]))
-                .max(1)
+                torch.tensor(np.array(np.random.random_sample(4)))
+                .max(0)
                 .indices.view(1, 1)
             )
 
