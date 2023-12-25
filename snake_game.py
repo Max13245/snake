@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import numpy as np
 import math
 from collections import namedtuple, deque
+import os
 
 
 pygame.init()
@@ -40,7 +41,7 @@ LR = 1e-4
 N_ACTIONS = 4
 
 ACTION_OPTIONS = ["up", "right", "down", "left"]
-N_EPISODES = 128
+N_EPISODES = 512
 
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
@@ -535,6 +536,13 @@ class MAP:
         self.snake.initiate_body()
 
 
+def get_n_models(path):
+    n_models = len(
+        [name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))]
+    )
+    return n_models
+
+
 autonomous = input("Autonomous: ")
 if not autonomous:
     snake_map = MAP(MAP_SIZE, autonomous)
@@ -548,3 +556,10 @@ else:
 
     # Only quit pygame after the entire training loop is done
     pygame.quit()
+
+    # Save model
+    models_path = "./models/"
+    n_models = get_n_models(models_path)
+    torch.save(
+        snake_map.snake.policy_net.state_dict(), f"{models_path}model_{n_models}"
+    )
