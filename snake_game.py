@@ -390,6 +390,8 @@ class MAP:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                return True
+        return False
 
     def run_autonomous_game_loop(self):
         while True:
@@ -401,7 +403,9 @@ class MAP:
             action = snake_map.select_action(state)
             self.AI_control(action)
 
-            self.check_quit_event()
+            quit_event = self.check_quit_event()
+            if quit_event:
+                break
 
             # Game loop mechanics
             screen.fill((0, 0, 0))
@@ -467,6 +471,7 @@ class MAP:
 
             if terminated or truncated:
                 break
+        return quit_event
 
     def select_action(self, state):
         sample = np.random.random()
@@ -568,7 +573,11 @@ else:
 
     for i_episode in range(N_EPISODES):
         # Initialize the environment and get it's state
-        snake_map.run_autonomous_game_loop()
+        quit_event = snake_map.run_autonomous_game_loop()
+
+        # Don't run again in case of quit_event
+        if quit_event:
+            break
 
     # Only quit pygame after the entire training loop is done
     pygame.quit()
