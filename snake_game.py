@@ -459,7 +459,6 @@ class MAP:
         eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
             -1.0 * self.n_episodes / EPS_DECAY
         )
-        self.n_episodes += 1
         if sample > eps_threshold:
             with torch.no_grad():
                 # Will return a list of sigmoid values
