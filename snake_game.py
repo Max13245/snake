@@ -521,6 +521,9 @@ class MAP:
         self.last_direction = "right"
         self.direction = "right"
         self.n_episodes += 1
+
+        # Snake values
+        self.snake.length = START_LENGTH
         self.snake.position = (16 * self.snake.size_x, 15 * self.snake.size_y)
         self.snake.body = []
         self.snake.initiate_body()
