@@ -325,6 +325,7 @@ class MAP:
 
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
+                break
 
             pygame.display.update()
             clock.tick(60)
