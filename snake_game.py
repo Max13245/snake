@@ -356,8 +356,7 @@ class MAP:
         return state
 
     def AI_control(self, action):
-        direction_index = np.argmax(action)
-        self.direction = ACTION_OPTIONS[direction_index]
+        self.direction = ACTION_OPTIONS[action]
 
     def run_autonomous_game_loop(self):
         while True:
@@ -443,10 +442,14 @@ class MAP:
         if sample > eps_threshold:
             with torch.no_grad():
                 # Will return a list of sigmoid values
-                return self.snake.policy_net(state)
+                return self.snake.policy_net(state).max(1).indices.view(1, 1)
         else:
             # Return random values to explore new possibilities
-            return np.array(np.random.random_sample(4))
+            return (
+                torch.tensor(np.array([np.random.random_sample(4)]))
+                .max(1)
+                .indices.view(1, 1)
+            )
 
     def optimize_model(self):
         if len(self.snake.memory) < BATCH_SIZE:
