@@ -362,8 +362,9 @@ class MAP:
         return state
 
     def AI_control(self, action):
-        self.direction = ACTION_OPTIONS[action]
+        self.last_direction = ACTION_OPTIONS[action]
 
+    def check_quit_event(self):
         # Check for quit event
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -375,9 +376,11 @@ class MAP:
             state = self.get_state()
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
-            # Get and perform an action
+            # Get and perform an action, only when at an intersection
             action = snake_map.select_action(state)
             self.AI_control(action)
+
+            self.check_quit_event()
 
             # Game loop mechanics
             screen.fill((0, 0, 0))
@@ -518,6 +521,9 @@ class MAP:
         self.last_direction = "right"
         self.direction = "right"
         self.n_episodes += 1
+        self.snake.position = (16 * self.snake.size_x, 15 * self.snake.size_y)
+        self.snake.body = []
+        self.snake.initiate_body()
 
 
 autonomous = input("Autonomous: ")
