@@ -79,7 +79,7 @@ class DQN(nn.Module):
 
 
 class SNAKE:
-    def __init__(self, size_x, size_y, autonomous):
+    def __init__(self, size_x, size_y, autonomous, load_model):
         if autonomous:
             """
             NN inputs:
@@ -94,7 +94,15 @@ class SNAKE:
                 3 = Snake head on square
                 4 = Apple on square
             """
-            self.policy_net = DQN().to(device)
+            if load_model:
+                self.policy_net = DQN().to(device)
+                self.policy_net.load_state_dict(
+                    torch.load(f"./models/model_{load_model}")
+                )
+                self.policy_net.eval()
+            else:
+                self.policy_net = DQN().to(device)
+
             self.target_net = DQN().to(device)
             self.target_net.load_state_dict(self.policy_net.state_dict())
 
@@ -192,7 +200,7 @@ class SNAKE:
 
 
 class MAP:
-    def __init__(self, size, autonomous):
+    def __init__(self, size, autonomous, load_model):
         self.autonomous = autonomous
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
@@ -200,7 +208,12 @@ class MAP:
         self.map = self.create_map()
         self.apple = self.create_apple()
         self.apple_possition_x, self.apple_possition_y = 23, 15
-        self.snake = SNAKE(self.x_blocks, self.y_blocks, self.autonomous)
+        self.snake = SNAKE(
+            self.x_blocks,
+            self.y_blocks,
+            self.autonomous,
+            load_model,
+        )
         self.last_direction = "right"
         self.direction = "right"
         self.n_episodes = 1
@@ -545,11 +558,14 @@ def get_n_models(path):
 
 autonomous = input("Autonomous: ")
 if not autonomous:
-    snake_map = MAP(MAP_SIZE, autonomous)
+    snake_map = MAP(MAP_SIZE, autonomous, None)
     snake_map.run_user_game_loop()
 else:
+    load_model = input("Load model: ")
+
     # Only init one time, since policy network is inside
-    snake_map = MAP(MAP_SIZE, autonomous)
+    snake_map = MAP(MAP_SIZE, autonomous, load_model)
+
     for i_episode in range(N_EPISODES):
         # Initialize the environment and get it's state
         snake_map.run_autonomous_game_loop()
