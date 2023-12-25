@@ -287,9 +287,16 @@ class MAP:
         self.snake.move_head(self.direction)
 
     def show_score(self):
-        text = font.render(f"Score: {self.snake.length - START_LENGTH}", True, BLACK)
-        textRect = text.get_rect()
-        screen.blit(text, textRect)
+        episode_text = font.render(f"Episode: {self.n_episodes}", True, BLACK)
+        episode_text_rect = episode_text.get_rect()
+        episode_text_rect.topleft = (5, 5)
+        screen.blit(episode_text, episode_text_rect)
+        score_text = font.render(
+            f"Score: {self.snake.length - START_LENGTH}", True, BLACK
+        )
+        score_text_rect = score_text.get_rect()
+        score_text_rect.topleft = (5, episode_text_rect.height + 10)
+        screen.blit(score_text, score_text_rect)
 
     def user_control(self):
         for event in pygame.event.get():
