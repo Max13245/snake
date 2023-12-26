@@ -275,6 +275,19 @@ class MAP:
             apple_img, (int(self.x_blocks), int(self.y_blocks))
         )
 
+    def calculate_apple_distance(self):
+        x_distance = np.abs(
+            self.apple_possition_x - self.snake.body[0].x / self.x_blocks
+        )
+        x_distance = math.floor(x_distance)
+        y_distance = np.abs(
+            self.apple_possition_y - self.snake.body[0].y / self.y_blocks
+        )
+        y_distance = math.floor(y_distance)
+        total_distance = x_distance + y_distance
+        print(total_distance)
+        return total_distance
+
     def at_intersection(self):
         if (
             self.snake.body[0].x % self.x_blocks == 0
