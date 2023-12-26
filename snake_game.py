@@ -490,12 +490,15 @@ class MAP:
                 reward = -10
                 terminated = True
 
-            # Determine other smaller rewards
-            reward += self.get_straightline_reward()
-
             # Game loop mechanics
             pygame.display.update()
             clock.tick(60)
+
+            if not self.at_intersection():
+                continue
+
+            # Determine other smaller rewards
+            reward += self.get_straightline_reward()
 
             # Create reward tensor
             reward = torch.tensor([reward], device=device)
