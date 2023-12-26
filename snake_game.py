@@ -216,6 +216,38 @@ class MAP:
         )
         self.last_direction = "right"
         self.direction = "right"
+
+        # Previous directions, to see if straight line made
+        self.straight_line_length = 3
+        self.max_straight_reward = 6
+        self.parabola_middle = (MAP_SIZE - 2) / 2 + 2
+        self.parabola_x_shape_points = np.array(
+            [
+                # First cut with y-axis
+                [
+                    self.straight_line_length**2,
+                    self.straight_line_length,
+                    1,
+                ],
+                # Second cut with y-axis
+                [
+                    MAP_SIZE**2,
+                    MAP_SIZE,
+                    1,
+                ],
+                # Top of the parabola
+                [
+                    self.parabola_middle**2,
+                    self.parabola_middle,
+                    1,
+                ],
+            ]
+        )
+        self.parabola_y_shape_points = np.array([0, 0, self.max_straight_reward])
+        self.parabola_a, self.parabola_b, self.parabola_c = np.linalg.solve(
+            self.parabola_x_shape_points, self.parabola_y_shape_points
+        )
+        self.prev_directions = []
         self.n_episodes = 1
 
     def create_map(self):
@@ -393,6 +425,28 @@ class MAP:
                 return True
         return False
 
+    def calculate_straightline_index_reward(self, x_reward_index):
+        # Calculate value of reward parabola
+        return (
+            self.parabola_a * x_reward_index**2
+            + self.parabola_b * x_reward_index
+            + self.parabola_c
+        )
+
+    def get_straightline_reward(self):
+        # Get reward index with current straightline length
+        self.prev_directions.append(self.direction)
+        reward_indx = len(self.prev_directions) - 1
+
+        if len(self.prev_directions) == 1:
+            return self.calculate_straightline_index_reward(0)
+
+        # Set prev_directions back to empty when a turn happens
+        if self.prev_directions[-2] != self.prev_directions[-1]:
+            self.prev_directions = []
+
+        return self.calculate_straightline_index_reward(reward_indx)
+
     def run_autonomous_game_loop(self):
         while True:
             # Get state and format it into a tensor
@@ -435,6 +489,9 @@ class MAP:
                 observation = None
                 reward = -10
                 terminated = True
+
+            # Determine other smaller rewards
+            reward += self.get_straightline_reward()
 
             # Game loop mechanics
             pygame.display.update()
@@ -586,6 +643,7 @@ else:
     models_path = "./models/"
     n_models = get_n_models(models_path)
 
+    # Add suffix when model has not completed training
     if quit_event:
         model_suffix = "_incomplete"
     else:
