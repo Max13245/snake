@@ -217,37 +217,9 @@ class MAP:
         self.last_direction = "right"
         self.direction = "right"
 
-        # Previous directions, to see if straight line made
-        self.straight_line_length = 3
-        self.max_straight_reward = 6
-        self.parabola_middle = (MAP_SIZE - 2) / 2 + 2
-        self.parabola_x_shape_points = np.array(
-            [
-                # First cut with y-axis
-                [
-                    self.straight_line_length**2,
-                    self.straight_line_length,
-                    1,
-                ],
-                # Second cut with y-axis
-                [
-                    MAP_SIZE**2,
-                    MAP_SIZE,
-                    1,
-                ],
-                # Top of the parabola
-                [
-                    self.parabola_middle**2,
-                    self.parabola_middle,
-                    1,
-                ],
-            ]
-        )
-        self.parabola_y_shape_points = np.array([0, 0, self.max_straight_reward])
-        self.parabola_a, self.parabola_b, self.parabola_c = np.linalg.solve(
-            self.parabola_x_shape_points, self.parabola_y_shape_points
-        )
-        self.prev_directions = []
+        # Calculate reward for straight lines
+        self.init_straightline_reward_parabola()
+
         self.n_episodes = 1
 
     def create_map(self):
@@ -382,6 +354,42 @@ class MAP:
 
             pygame.display.update()
             clock.tick(60)
+
+    def init_straightline_reward_parabola(self):
+        """This function calculates the reward for straightline,
+        when not a straightline negative reward, when straightline positive reward
+        the longer the line the more reward, until middle of the parabola then the
+        reward will decrease"""
+        self.straight_line_length = 3
+        self.max_straight_reward = 6
+        self.parabola_middle = (MAP_SIZE - 2) / 2 + 2
+        self.parabola_x_shape_points = np.array(
+            [
+                # First cut with y-axis
+                [
+                    self.straight_line_length**2,
+                    self.straight_line_length,
+                    1,
+                ],
+                # Second cut with y-axis
+                [
+                    MAP_SIZE**2,
+                    MAP_SIZE,
+                    1,
+                ],
+                # Top of the parabola
+                [
+                    self.parabola_middle**2,
+                    self.parabola_middle,
+                    1,
+                ],
+            ]
+        )
+        self.parabola_y_shape_points = np.array([0, 0, self.max_straight_reward])
+        self.parabola_a, self.parabola_b, self.parabola_c = np.linalg.solve(
+            self.parabola_x_shape_points, self.parabola_y_shape_points
+        )
+        self.prev_directions = []
 
     def get_state(self):
         flat_map_values = np.full(shape=self.block_size * self.block_size, fill_value=1)
