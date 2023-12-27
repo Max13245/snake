@@ -231,13 +231,13 @@ class MAP:
 
         # Info for screen
         self.n_episodes = 1
+        self.n_steps = 1
         self.n_batches = 1
         self.score = 0
         self.top_score = 0
         self.previous_loss = 0
         self.random_threshold = round(
-            EPS_END
-            + (EPS_START - EPS_END) * math.exp(-1.0 * self.n_episodes / EPS_DECAY),
+            EPS_END + (EPS_START - EPS_END) * math.exp(-1.0 * self.n_steps / EPS_DECAY),
             2,
         )
 
@@ -347,10 +347,19 @@ class MAP:
         episode_text_rect.topleft = (5, 5)
         screen.blit(episode_text, episode_text_rect)
 
+        # Step
+        step_text = font.render(f"Step: {self.n_steps}", True, BLACK)
+        step_text_rect = step_text.get_rect()
+        step_text_rect.topleft = (5, episode_text_rect.height + 10)
+        screen.blit(step_text, step_text_rect)
+
         # Batch
         batch_text = font.render(f"Batch: {self.n_batches}", True, BLACK)
         batch_text_rect = batch_text.get_rect()
-        batch_text_rect.topleft = (5, episode_text_rect.height + 10)
+        batch_text_rect.topleft = (
+            5,
+            episode_text_rect.height + step_text_rect.height + 15,
+        )
         screen.blit(batch_text, batch_text_rect)
 
         # Score
@@ -359,7 +368,10 @@ class MAP:
         score_text_rect = score_text.get_rect()
         score_text_rect.topleft = (
             5,
-            episode_text_rect.height + batch_text_rect.height + 15,
+            episode_text_rect.height
+            + step_text_rect.height
+            + batch_text_rect.height
+            + 20,
         )
         screen.blit(score_text, score_text_rect)
 
@@ -372,9 +384,10 @@ class MAP:
         top_score_text_rect.topleft = (
             5,
             episode_text_rect.height
+            + step_text_rect.height
             + batch_text_rect.height
             + score_text_rect.height
-            + 20,
+            + 25,
         )
         screen.blit(top_score_text, top_score_text_rect)
 
@@ -384,10 +397,11 @@ class MAP:
         loss_text_rect.topleft = (
             5,
             episode_text_rect.height
+            + step_text_rect.height
             + batch_text_rect.height
             + score_text_rect.height
             + top_score_text_rect.height
-            + 25,
+            + 30,
         )
         screen.blit(loss_text, loss_text_rect)
 
@@ -397,11 +411,12 @@ class MAP:
         threshold_text_rect.topleft = (
             5,
             episode_text_rect.height
+            + step_text_rect.height
             + batch_text_rect.height
             + score_text_rect.height
             + top_score_text_rect.height
             + loss_text_rect.height
-            + 30,
+            + 35,
         )
         screen.blit(threshold_text, threshold_text_rect)
 
@@ -584,7 +599,7 @@ class MAP:
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
             # Get and perform an action, only when at an intersection
-            action = snake_map.select_action(state)
+            action = snake_map.select_action(state)  # TODO: Only on intersect?
             self.AI_control(action)
 
             quit_event = self.check_quit_event()
@@ -623,6 +638,9 @@ class MAP:
             # Game loop mechanics
             pygame.display.update()
             clock.tick(60)
+
+            # One step done
+            self.n_steps += 1
 
             if not self.at_intersection():
                 continue
@@ -666,11 +684,11 @@ class MAP:
 
     def select_action(self, state):
         sample = np.random.random()
-        eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
-            -1.0 * self.n_episodes / EPS_DECAY
+        step_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
+            -1.0 * self.n_steps / EPS_DECAY
         )
-        self.random_threshold = round(eps_threshold, 2)
-        if sample > eps_threshold:
+        self.random_threshold = round(step_threshold, 2)
+        if sample > step_threshold:
             with torch.no_grad():
                 # Will return a list of sigmoid values
                 return self.snake.policy_net(state).max(1).indices.view(1, 1)
@@ -787,7 +805,7 @@ else:
     if quit_event:
         model_suffix = "_incomplete"
     else:
-        model_prefix = ""
+        model_suffix = ""
 
     torch.save(
         snake_map.snake.policy_net.state_dict(),
@@ -797,5 +815,4 @@ else:
 """
 TODO list:
 - Step instead of episodes
-- Hide info functionality
 """
