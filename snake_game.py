@@ -235,6 +235,11 @@ class MAP:
         self.score = 0
         self.top_score = 0
         self.previous_loss = 0
+        self.random_threshold = round(
+            EPS_END
+            + (EPS_START - EPS_END) * math.exp(-1.0 * self.n_episodes / EPS_DECAY),
+            2,
+        )
 
     def create_map(self):
         for i in range(self.block_size):
@@ -380,6 +385,20 @@ class MAP:
             + 25,
         )
         screen.blit(loss_text, loss_text_rect)
+
+        # Random threshold
+        threshold_text = font.render(f"Threshold: {self.random_threshold}", True, BLACK)
+        threshold_text_rect = threshold_text.get_rect()
+        threshold_text_rect.topleft = (
+            5,
+            episode_text_rect.height
+            + batch_text_rect.height
+            + score_text_rect.height
+            + top_score_text_rect.height
+            + loss_text_rect.height
+            + 30,
+        )
+        screen.blit(threshold_text, threshold_text_rect)
 
     def user_control(self):
         for event in pygame.event.get():
@@ -642,6 +661,7 @@ class MAP:
         eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
             -1.0 * self.n_episodes / EPS_DECAY
         )
+        self.random_threshold = round(eps_threshold, 2)
         if sample > eps_threshold:
             with torch.no_grad():
                 # Will return a list of sigmoid values
