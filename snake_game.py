@@ -229,8 +229,11 @@ class MAP:
         )
         self.previous_apple_distance = self.calculate_apple_distance()
 
+        # Info for screen
         self.n_episodes = 1
         self.n_batches = 1
+        self.score = 0
+        self.top_score = 0
 
     def create_map(self):
         for i in range(self.block_size):
@@ -326,7 +329,7 @@ class MAP:
         self.snake.move()
         self.snake.move_head(self.direction)
 
-    def show_score(self):
+    def show_info(self):
         # Episode
         episode_text = font.render(f"Episode: {self.n_episodes}", True, BLACK)
         episode_text_rect = episode_text.get_rect()
@@ -340,15 +343,29 @@ class MAP:
         screen.blit(batch_text, batch_text_rect)
 
         # Score
-        score_text = font.render(
-            f"Score: {self.snake.length - START_LENGTH}", True, BLACK
-        )
+        self.score = self.snake.length - START_LENGTH
+        score_text = font.render(f"Score: {self.score}", True, BLACK)
         score_text_rect = score_text.get_rect()
         score_text_rect.topleft = (
             5,
             episode_text_rect.height + batch_text_rect.height + 15,
         )
         screen.blit(score_text, score_text_rect)
+
+        # Top score
+        if self.score > self.top_score:
+            self.top_score = self.score
+
+        top_score_text = font.render(f"Top score: {self.top_score}", True, BLACK)
+        top_score_text_rect = top_score_text.get_rect()
+        top_score_text_rect.topleft = (
+            5,
+            episode_text_rect.height
+            + batch_text_rect.height
+            + score_text_rect.height
+            + 20,
+        )
+        screen.blit(top_score_text, top_score_text_rect)
 
     def user_control(self):
         for event in pygame.event.get():
@@ -380,7 +397,7 @@ class MAP:
             self.move_snake()
             self.apple_overlap()
             self.snake.draw_snake()
-            self.show_score()
+            self.show_info()
 
             if self.snake.wall_collision() or self.snake.tangled():
                 pygame.quit()
@@ -540,7 +557,7 @@ class MAP:
             self.move_snake()
             apple_overlap = self.apple_overlap()
             self.snake.draw_snake()
-            self.show_score()
+            self.show_info()
 
             # Transition init data
             observation = self.get_state()
