@@ -687,6 +687,9 @@ class MAP:
         self.snake.body = []
         self.snake.initiate_body()
 
+        # Must be called after repositioning snake and apple
+        self.previous_apple_distance = self.calculate_apple_distance()
+
 
 def get_n_models(path):
     n_models = len(
