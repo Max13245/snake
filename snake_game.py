@@ -476,7 +476,11 @@ class MAP:
 
         return self.calculate_straightline_index_reward(reward_indx)
 
-    def get_apple_radius_reward(self):
+    def get_apple_radius_reward(self, apple_overlap):
+        # If apple is recieved in this round then skip radius reward
+        if apple_overlap:
+            return 0
+
         distance = self.calculate_apple_distance()
 
         # If snake head not in apple reward radius don't calculate reward
@@ -500,7 +504,6 @@ class MAP:
             reward = 0
 
         self.previous_apple_distance = distance
-        # print(reward)
         return reward
 
     def run_autonomous_game_loop(self):
@@ -555,7 +558,7 @@ class MAP:
 
             # Determine other smaller rewards
             reward += self.get_straightline_reward()
-            reward += self.get_apple_radius_reward()
+            reward += self.get_apple_radius_reward(apple_overlap)
 
             # Create reward tensor
             reward = torch.tensor([reward], device=device)
