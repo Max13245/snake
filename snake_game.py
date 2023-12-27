@@ -241,6 +241,8 @@ class MAP:
             2,
         )
 
+        self.show_information = True
+
     def create_map(self):
         for i in range(self.block_size):
             row = []
@@ -336,6 +338,9 @@ class MAP:
         self.snake.move_head(self.direction)
 
     def show_info(self):
+        if not self.show_information:
+            return
+
         # Episode
         episode_text = font.render(f"Episode: {self.n_episodes}", True, BLACK)
         episode_text_rect = episode_text.get_rect()
@@ -515,6 +520,9 @@ class MAP:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_h:
+                    self.show_information ^= True
         return False
 
     def calculate_straightline_index_reward(self, x_reward_index):
@@ -785,3 +793,9 @@ else:
         snake_map.snake.policy_net.state_dict(),
         f"{models_path}model_{n_models}{model_suffix}",
     )
+
+"""
+TODO list:
+- Step instead of episodes
+- Hide info functionality
+"""
