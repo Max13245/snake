@@ -217,8 +217,17 @@ class MAP:
         self.last_direction = "right"
         self.direction = "right"
 
-        # Calculate reward for straight lines
+        # For calculating reward for straight lines
         self.init_straightline_reward_parabola()
+
+        # For calculating reward for closing in on apple
+        self.apple_reward_radius = 16
+        self.maximum_apple_radius_reward = 6
+        # Logarithmic function: y = a^x
+        self.minimum_apple_radius_reward = self.maximum_apple_radius_reward ** (
+            1 / self.apple_reward_radius
+        )
+        self.previous_apple_distance = self.calculate_apple_distance()
 
         self.n_episodes = 1
 
@@ -285,7 +294,6 @@ class MAP:
         )
         y_distance = math.floor(y_distance)
         total_distance = x_distance + y_distance
-        print(total_distance)
         return total_distance
 
     def at_intersection(self):
@@ -468,6 +476,33 @@ class MAP:
 
         return self.calculate_straightline_index_reward(reward_indx)
 
+    def get_apple_radius_reward(self):
+        distance = self.calculate_apple_distance()
+
+        # If snake head not in apple reward radius don't calculate reward
+        # If self.previous_apple_distance is at apple location don't calc reward
+        if distance > self.apple_reward_radius or not self.previous_apple_distance:
+            reward = 0
+        elif self.previous_apple_distance < distance:
+            # Return negative reward
+            # Must as big as positive reward, otherwise snake
+            # might circle around apple to maximize reward
+            reward = -(
+                self.minimum_apple_radius_reward
+                ** (self.maximum_apple_radius_reward - self.previous_apple_distance)
+            )
+        elif distance < self.previous_apple_distance:
+            # Return positive reward
+            reward = self.minimum_apple_radius_reward ** (
+                self.maximum_apple_radius_reward - distance
+            )
+        else:
+            reward = 0
+
+        self.previous_apple_distance = distance
+        # print(reward)
+        return reward
+
     def run_autonomous_game_loop(self):
         while True:
             # Get state and format it into a tensor
@@ -520,6 +555,7 @@ class MAP:
 
             # Determine other smaller rewards
             reward += self.get_straightline_reward()
+            reward += self.get_apple_radius_reward()
 
             # Create reward tensor
             reward = torch.tensor([reward], device=device)
