@@ -230,6 +230,7 @@ class MAP:
         self.previous_apple_distance = self.calculate_apple_distance()
 
         self.n_episodes = 1
+        self.n_batches = 1
 
     def create_map(self):
         for i in range(self.block_size):
@@ -326,15 +327,27 @@ class MAP:
         self.snake.move_head(self.direction)
 
     def show_score(self):
+        # Episode
         episode_text = font.render(f"Episode: {self.n_episodes}", True, BLACK)
         episode_text_rect = episode_text.get_rect()
         episode_text_rect.topleft = (5, 5)
         screen.blit(episode_text, episode_text_rect)
+
+        # Batch
+        batch_text = font.render(f"Batch: {self.n_batches}", True, BLACK)
+        batch_text_rect = batch_text.get_rect()
+        batch_text_rect.topleft = (5, episode_text_rect.height + 10)
+        screen.blit(batch_text, batch_text_rect)
+
+        # Score
         score_text = font.render(
             f"Score: {self.snake.length - START_LENGTH}", True, BLACK
         )
         score_text_rect = score_text.get_rect()
-        score_text_rect.topleft = (5, episode_text_rect.height + 10)
+        score_text_rect.topleft = (
+            5,
+            episode_text_rect.height + batch_text_rect.height + 15,
+        )
         screen.blit(score_text, score_text_rect)
 
     def user_control(self):
@@ -659,6 +672,7 @@ class MAP:
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.snake.policy_net.parameters(), 100)
         self.snake.optimizer.step()
+        self.n_batches += 1
 
     def reset_map(self):
         """Reset the map, so pygame.init doesn't have to run every training loop"""
