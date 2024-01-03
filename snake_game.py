@@ -67,14 +67,14 @@ class ReplayMemory(object):
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(MAP_SIZE * MAP_SIZE + 1, 1024)
-        self.layer2 = nn.Linear(1024, 1024)
-        self.layer3 = nn.Linear(1024, N_ACTIONS)
+        self.layer1 = nn.Linear(MAP_SIZE * MAP_SIZE, 128)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, N_ACTIONS)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        x = F.softmax(self.layer3(x))
+        x = F.sigmoid(self.layer3(x))
         return x
 
 
@@ -83,16 +83,11 @@ class SNAKE:
         if autonomous:
             """
             NN inputs:
-            1. Current direction
-                1 = Up
-                2 = Right
-                3 = Down
-                4 = Left
-            2. Every square has a value
-                1 = Nothing on square
-                2 = Snake body on square
-                3 = Snake head on square
-                4 = Apple on square
+                Every square has a value
+                0 = Nothing on square
+                1 = Snake body on square
+                2 = Snake head on square
+                3 = Apple on square
             """
             if load_model:
                 self.policy_net = DQN().to(device)
@@ -219,7 +214,7 @@ class MAP:
         self.apple_overlap = False
 
         # For calculating reward for closing in on apple
-        self.maximum_apple_radius_reward = 0.1
+        self.maximum_apple_radius_reward = 0.4
         self.previous_apple_distance = self.calculate_apple_distance()
 
         # Non apple overlap negative reward
@@ -227,7 +222,7 @@ class MAP:
         # Everytime it doesn't get an apple 0.2 negative reward
         # Get negative reward of 1 when no apple overlap in map length moves (30)
         # Get increasingly big negative reward for not getting an apple overlap
-        self.non_overlap_reward = 0.2
+        self.non_overlap_reward = 0.3
 
         # Info for screen
         self.n_episodes = 1
@@ -454,35 +449,32 @@ class MAP:
             clock.tick(60)
 
     def get_state(self):
-        flat_map_values = np.full(shape=self.block_size * self.block_size, fill_value=1)
+        flat_map_values = np.full(shape=self.block_size * self.block_size, fill_value=0)
 
-        # Set all body values on flat map to 2
+        # Set all body values on flat map to 1
         for limb_indx in range(1, len(self.snake.body)):
+            x = self.snake.body[limb_indx].x / self.x_blocks
+            y = (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
             limb_location = int(
                 self.snake.body[limb_indx].x / self.x_blocks
                 + (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
             )
-            flat_map_values[limb_location] = 2
+            flat_map_values[limb_location] = 1
 
         # Set head value to 3 on flat map
         head_location = int(
             self.snake.body[0].x / self.x_blocks
             + (self.snake.body[0].y / self.y_blocks - 1) * self.block_size
         )
-        flat_map_values[head_location] = 3
+        flat_map_values[head_location] = 2
 
         # Set apple value to 4 on flat map
         apple_location = int(
             self.apple_possition_x + (self.apple_possition_y - 1) * self.block_size
         )
-        flat_map_values[apple_location] = 4
+        flat_map_values[apple_location] = 3
 
-        # Append current direction (as a number from 1 to 4)
-        state = np.append(
-            flat_map_values, ACTION_OPTIONS.index(self.last_direction) + 1
-        )
-
-        return state
+        return flat_map_values
 
     def AI_control(self, action):
         self.last_direction = ACTION_OPTIONS[action]
@@ -575,7 +567,7 @@ class MAP:
                 self.reset_map()
 
                 observation = None
-                reward -= 0.6
+                reward -= 0.7
                 terminated = True
 
             # Game loop mechanics
@@ -750,8 +742,3 @@ else:
         snake_map.snake.policy_net.state_dict(),
         f"{models_path}model_{n_models}{model_suffix}",
     )
-
-"""
-TODO list:
-- Step instead of episodes
-"""
