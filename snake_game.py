@@ -672,9 +672,6 @@ class MAP:
 
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        print(state_action_values)
-        print("\n\n\n")
-        print(expected_state_action_values)
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.previous_loss = round(loss.item(), 2)
 
