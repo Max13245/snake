@@ -217,13 +217,6 @@ class MAP:
         self.maximum_apple_radius_reward = 0.4
         self.previous_apple_distance = self.calculate_apple_distance()
 
-        # Non apple overlap negative reward
-        # Options:
-        # Everytime it doesn't get an apple 0.2 negative reward
-        # Get negative reward of 1 when no apple overlap in map length moves (30)
-        # Get increasingly big negative reward for not getting an apple overlap
-        self.non_overlap_reward = 0.3
-
         # Info for screen
         self.n_episodes = 1
         self.n_steps = 1
@@ -559,11 +552,9 @@ class MAP:
                 observation = self.get_state()
                 reward = 0
 
-                # Get positive reward when apple overlap happens TODO: Look if this works for reward!!!
+                # Get positive reward when apple overlap happens
                 if self.apple_overlap:
                     reward = 1
-                else:
-                    reward = self.non_overlap_reward
 
                 if not (reward >= 1):
                     reward += self.get_apple_radius_reward()
@@ -681,6 +672,9 @@ class MAP:
 
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
+        print(state_action_values)
+        print("\n\n\n")
+        print(expected_state_action_values)
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.previous_loss = round(loss.item(), 2)
 
