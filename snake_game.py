@@ -523,8 +523,27 @@ class MAP:
         self.snake.draw_snake()
         self.show_info()
 
+    def store_state_action(self, state, action, next_state, reward):
+        # Create reward tensor
+        reward_tensor = torch.tensor([reward], device=device)
+
+        # Create a transition
+        self.snake.memory.push(state, action, next_state, reward_tensor)
+
+    def soft_update_target_net(self):
+        # Soft update of the target network's weights
+        target_net_state_dict = self.snake.target_net.state_dict()
+        policy_net_state_dict = self.snake.policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[
+                key
+            ] * TAU + target_net_state_dict[key] * (1 - TAU)
+        self.snake.target_net.load_state_dict(target_net_state_dict)
+
     def run_autonomous_game_loop(self):
         state = None
+        next_state = None
+        truncated = False  # TODO: Necessary?
         while True:
             if not self.at_intersection():
                 # Game loop mechanics
@@ -534,70 +553,36 @@ class MAP:
 
                 continue
 
+            terminated = False
             if state != None:
                 # Transition init data
                 observation = self.get_state()
                 reward = 0
-                terminated = False
-                truncated = False
 
-                # Get positive reward when apple overlap happens
+                # Get positive reward when apple overlap happens TODO: Look if this works for reward!!!
                 if self.apple_overlap:
-                    reward += 1
+                    reward = 1
                 else:
-                    reward -= self.non_overlap_reward
-
-                # Get negative reward when wall_collision or snake gets tangled
-                # TODO: Maybe differenciate between wall and snake collision
-                if self.snake.wall_collision() or self.snake.tangled():
-                    # Use reset map instead of pygame.quit()
-                    self.reset_map()
-
-                    observation = None
-                    reward -= 0.7
-                    terminated = True
-
-                # One step done
-                self.n_steps += 1
+                    reward = self.non_overlap_reward
 
                 if not (reward >= 1):
                     reward += self.get_apple_radius_reward()
 
-                # Create reward tensor
-                reward = torch.tensor([reward], device=device)
-
                 # Get next state
-                if terminated:
-                    next_state = None
-                else:
-                    next_state = torch.tensor(
-                        observation, dtype=torch.float32, device=device
-                    ).unsqueeze(0)
+                next_state = torch.tensor(
+                    observation, dtype=torch.float32, device=device
+                ).unsqueeze(0)
 
-                # Create a transition
-                self.snake.memory.push(state, action, next_state, reward)
-
-                # Move to the next state
-                state = next_state
-
-                # Perform one step of the optimization (on the policy network)
-                self.optimize_model()
-
-                # Soft update of the target network's weights
-                target_net_state_dict = self.snake.target_net.state_dict()
-                policy_net_state_dict = self.snake.policy_net.state_dict()
-                for key in policy_net_state_dict:
-                    target_net_state_dict[key] = policy_net_state_dict[
-                        key
-                    ] * TAU + target_net_state_dict[key] * (1 - TAU)
-                self.snake.target_net.load_state_dict(target_net_state_dict)
-
-                if terminated or truncated:
-                    break
+                self.store_state_action(state, action, next_state, reward)
 
             # Get state and format it into a tensor
-            state = self.get_state()
-            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+            if next_state != None:
+                state = next_state
+            else:
+                state = self.get_state()
+                state = torch.tensor(
+                    state, dtype=torch.float32, device=device
+                ).unsqueeze(0)
 
             # Get and perform an action, only when at an intersection
             action = snake_map.select_action(state)
@@ -611,6 +596,29 @@ class MAP:
             self.game_mechanics()
             pygame.display.update()
             clock.tick(60)
+
+            # Get negative reward when wall_collision or snake gets tangled
+            # TODO: Maybe differenciate between wall and snake collision
+            if self.snake.wall_collision() or self.snake.tangled():
+                observation = None
+                reward = -0.7
+
+                self.store_state_action(state, action, observation, reward)
+
+                # Use reset map instead of pygame.quit()
+                self.reset_map()
+
+                terminated = True
+
+            self.soft_update_target_net()
+            # Perform one step of the optimization (on the policy network)
+            self.optimize_model()
+
+            # One step done
+            self.n_steps += 1
+
+            if terminated or truncated:
+                break
 
         return quit_event
 
