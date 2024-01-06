@@ -22,6 +22,7 @@ clock = pygame.time.Clock()
 GREEN = (19, 145, 57)
 LIGHTGREEN = (48, 176, 86)
 BLUE = (8, 77, 161)
+RED = (161, 77, 8)
 BLACK = (0, 0, 0)
 
 font = pygame.font.Font("freesansbold.ttf", 32)
@@ -113,6 +114,7 @@ class SNAKE:
         self.position = (16 * self.size_x, 15 * self.size_y)
         self.body = []
         self.initiate_body()
+        self.current_color = BLUE
 
     def create_limb(self):
         limb = pygame.Rect(
@@ -133,7 +135,7 @@ class SNAKE:
 
     def draw_snake(self):
         for limb in self.body:
-            pygame.draw.ellipse(screen, BLUE, limb)
+            pygame.draw.ellipse(screen, self.current_color, limb)
 
     def move_head(self, direction):
         if direction == "up":
@@ -622,12 +624,14 @@ class MAP:
         self.random_threshold = round(step_threshold, 2)
         if sample > step_threshold:
             with torch.no_grad():
+                self.snake.current_color = BLUE
                 # Will return a list of relu values
                 output = self.snake.policy_net(state).max(1)
                 if output[0].item() > self.max_relu_value:
                     self.max_relu_value = output[0].item()
                 return output.indices.view(1, 1)
         else:
+            self.snake.current_color = RED
             # Return random values to explore new possibilities
             return (
                 torch.tensor(np.array(np.random.uniform(0, self.max_relu_value, 4)))
