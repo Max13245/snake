@@ -74,7 +74,7 @@ class DQN(nn.Module):
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        x = F.sigmoid(self.layer3(x))
+        x = F.relu(self.layer3(x))
         return x
 
 
@@ -212,6 +212,7 @@ class MAP:
         self.last_direction = "right"
         self.direction = "right"
         self.apple_overlap = False
+        self.max_relu_value = 0.0
 
         # For calculating reward for closing in on apple
         self.maximum_apple_radius_reward = 0.4
@@ -621,12 +622,15 @@ class MAP:
         self.random_threshold = round(step_threshold, 2)
         if sample > step_threshold:
             with torch.no_grad():
-                # Will return a list of sigmoid values
-                return self.snake.policy_net(state).max(1).indices.view(1, 1)
+                # Will return a list of relu values
+                output = self.snake.policy_net(state).max(1)
+                if output[0].item() > self.max_relu_value:
+                    self.max_relu_value = output[0].item()
+                return output.indices.view(1, 1)
         else:
             # Return random values to explore new possibilities
             return (
-                torch.tensor(np.array(np.random.random_sample(4)))
+                torch.tensor(np.array(np.random.uniform(0, self.max_relu_value, 4)))
                 .max(0)
                 .indices.view(1, 1)
             )
@@ -672,6 +676,9 @@ class MAP:
 
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
+        print(state_action_values)
+        print("\n\n\n")
+        print(expected_state_action_values)
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.previous_loss = round(loss.item(), 2)
 
