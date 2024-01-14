@@ -650,7 +650,7 @@ class MAP:
             -1.0 * self.n_steps / EPS_DECAY
         )
         self.random_threshold = round(step_threshold, 2)
-        if sample > step_threshold:
+        if sample > step_threshold or step_threshold <= 0.06:
             with torch.no_grad():
                 self.snake.current_color = BLUE
                 # Will return a list of relu values
