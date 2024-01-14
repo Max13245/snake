@@ -68,7 +68,7 @@ class ReplayMemory(object):
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(MAP_SIZE * MAP_SIZE, 128)
+        self.layer1 = nn.Linear(9, 128)
         self.layer2 = nn.Linear(128, 128)
         self.layer3 = nn.Linear(128, N_ACTIONS)
 
@@ -217,7 +217,7 @@ class MAP:
         self.max_relu_value = 0.0
 
         # For calculating reward for closing in on apple
-        self.maximum_apple_radius_reward = 0.01
+        self.maximum_apple_radius_reward = 0.2
         self.previous_apple_distance = self.calculate_apple_distance()
 
         # Info for screen
@@ -445,30 +445,60 @@ class MAP:
             clock.tick(60)
 
     def get_state(self):
-        flat_map_values = np.full(shape=self.block_size * self.block_size, fill_value=0)
+        """
+        1. Head position                             2
+        2. Apple position                            2
+        3. Up and down collision distance            2
+        4. Left and Right collistion distance        2
+        5. Current direction                         1
+        """
 
-        # Set all body values on flat map to 1
-        for limb_indx in range(1, len(self.snake.body)):
-            limb_location = int(
-                self.snake.body[limb_indx].x / self.x_blocks
-                + (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
-            )
-            flat_map_values[limb_location] = 1
+        head_position = [
+            self.snake.body[0].x / self.x_blocks,
+            self.snake.body[0].y / self.y_blocks,
+        ]
+        apple_position = [self.apple_possition_x, self.apple_possition_y]
 
-        # Set head value to 2 on flat map
-        head_location = int(
-            self.snake.body[0].x / self.x_blocks
-            + (self.snake.body[0].y / self.y_blocks - 1) * self.block_size
-        )
-        flat_map_values[head_location] = 2
+        # Funky code, probably inefficient, just testing something
+        up_distances = []
+        down_distances = []
+        left_distances = []
+        right_distances = []
 
-        # Set apple value to 3 on flat map
-        apple_location = int(
-            self.apple_possition_x + (self.apple_possition_y - 1) * self.block_size
-        )
-        flat_map_values[apple_location] = 3
+        snake_head = self.snake.body[0]
+        for limb in self.snake.body[1:]:
+            if limb.x == snake_head.x:
+                vertical_distance = limb.y - snake_head.y
+                if vertical_distance < 0:
+                    up_distances.append(vertical_distance * -1)
+                elif vertical_distance > 0:
+                    down_distances.append(vertical_distance)
+            elif limb.y == snake_head.y:
+                horizontal_distance = limb.x - snake_head.x
+                if horizontal_distance < 0:
+                    left_distances.append(horizontal_distance * -1)
+                elif horizontal_distance > 0:
+                    right_distances.append(horizontal_distance)
 
-        return flat_map_values
+        if len(up_distances) == 0:
+            up_distances.append(snake_head.y)
+        if len(down_distances) == 0:
+            down_distances.append(height - snake_head.y)
+        if len(left_distances) == 0:
+            left_distances.append(snake_head.x)
+        if len(right_distances) == 0:
+            right_distances.append(width - snake_head.x)
+
+        distances = [
+            min(up_distances) / self.y_blocks,
+            min(down_distances) / self.y_blocks,
+            min(left_distances) / self.x_blocks,
+            min(right_distances) / self.x_blocks,
+        ]
+        current_direction = ACTION_OPTIONS.index(self.last_direction)
+
+        state = head_position + apple_position + distances + [current_direction]
+        return np.array(state)
 
     def AI_control(self, action):
         self.last_direction = ACTION_OPTIONS[action]
