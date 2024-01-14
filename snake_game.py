@@ -42,7 +42,7 @@ LR = 1e-4
 N_ACTIONS = 4
 
 ACTION_OPTIONS = ["up", "right", "down", "left"]
-N_EPISODES = 512
+N_EPISODES = 16384
 
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
@@ -217,7 +217,7 @@ class MAP:
         self.max_relu_value = 0.0
 
         # For calculating reward for closing in on apple
-        self.maximum_apple_radius_reward = 0.4
+        self.maximum_apple_radius_reward = 0.01
         self.previous_apple_distance = self.calculate_apple_distance()
 
         # Info for screen
@@ -449,22 +449,20 @@ class MAP:
 
         # Set all body values on flat map to 1
         for limb_indx in range(1, len(self.snake.body)):
-            x = self.snake.body[limb_indx].x / self.x_blocks
-            y = (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
             limb_location = int(
                 self.snake.body[limb_indx].x / self.x_blocks
                 + (self.snake.body[limb_indx].y / self.y_blocks - 1) * self.block_size
             )
             flat_map_values[limb_location] = 1
 
-        # Set head value to 3 on flat map
+        # Set head value to 2 on flat map
         head_location = int(
             self.snake.body[0].x / self.x_blocks
             + (self.snake.body[0].y / self.y_blocks - 1) * self.block_size
         )
         flat_map_values[head_location] = 2
 
-        # Set apple value to 4 on flat map
+        # Set apple value to 3 on flat map
         apple_location = int(
             self.apple_possition_x + (self.apple_possition_y - 1) * self.block_size
         )
@@ -633,11 +631,9 @@ class MAP:
         else:
             self.snake.current_color = RED
             # Return random values to explore new possibilities
-            return (
-                torch.tensor(np.array(np.random.uniform(0, self.max_relu_value, 4)))
-                .max(0)
-                .indices.view(1, 1)
-            )
+            random_array = np.array(np.random.uniform(0, self.max_relu_value, 4))
+            random_action = torch.tensor(random_array).max(0).indices.view(1, 1)
+            return random_action
 
     def optimize_model(self):
         if len(self.snake.memory) < BATCH_SIZE:
@@ -646,6 +642,7 @@ class MAP:
 
         # Transpose the batch
         batch = Transition(*zip(*transitions))
+
         # Compute a mask of non-final states and concatenate the batch elements
         # (a final state would've been the one after which simulation ended)
         non_final_mask = torch.tensor(
@@ -656,6 +653,7 @@ class MAP:
         non_final_next_states = torch.cat(
             [s for s in batch.next_state if s is not None]
         )
+
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
@@ -663,6 +661,7 @@ class MAP:
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to policy_net
+        # TODO: Gathers right action?
         state_action_values = self.snake.policy_net(state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
@@ -680,15 +679,13 @@ class MAP:
 
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
-        print(state_action_values)
-        print("\n\n\n")
-        print(expected_state_action_values)
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
         self.previous_loss = round(loss.item(), 2)
 
         # Optimize the model
         self.snake.optimizer.zero_grad()
         loss.backward()
+
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.snake.policy_net.parameters(), 100)
         self.snake.optimizer.step()
