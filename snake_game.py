@@ -338,6 +338,10 @@ class MAP:
             ("Batch", self.n_batches),
             ("Score", self.score),
             ("Top Score", self.top_score),
+            ("Average Score", self.average_score),
+            ("Average Score Max", self.average_score_max),
+            ("Small Average Score", self.small_score_average),
+            ("Small Average Score Max", self.small_score_average_max),
             ("Loss", self.previous_loss),
             ("Threshold", self.random_threshold),
         ]
@@ -489,9 +493,10 @@ class MAP:
             self.top_score = self.score
 
     def calculate_averages(self):
-        self.average_score = (
-            self.average_score * (self.n_episodes - 1) + self.score
-        ) / self.n_episodes
+        self.average_score = round(
+            (self.average_score * (self.n_episodes - 1) + self.score) / self.n_episodes,
+            2,
+        )
 
         if self.average_score > self.average_score_max:
             self.average_score_max = self.average_score
@@ -500,8 +505,8 @@ class MAP:
         self.small_score_average_data.append(self.score)
         if len(self.small_score_average_data) >= self.average_total_sum + 1:
             self.small_score_average_data = self.small_score_average_data[1:]
-        self.small_score_average = (
-            sum(self.small_score_average_data) / self.average_total_sum
+        self.small_score_average = round(
+            sum(self.small_score_average_data) / self.average_total_sum, 2
         )
 
         if self.small_score_average > self.small_score_average_max:
@@ -746,8 +751,10 @@ else:
 
     # Add suffix when model has not completed training
     if quit_event:
+        print("Saved as incomplete model")
         model_suffix = "_incomplete"
     else:
+        print("Saved as complete model")
         model_suffix = ""
 
     torch.save(
