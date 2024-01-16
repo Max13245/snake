@@ -92,9 +92,14 @@ class SNAKE:
             """
             if load_model:
                 self.policy_net = DQN().to(device)
-                self.policy_net.load_state_dict(
-                    torch.load(f"./models/model_{load_model}")
-                )
+                try:
+                    self.policy_net.load_state_dict(
+                        torch.load(f"./models/model_{load_model}")
+                    )
+                except:
+                    self.policy_net.load_state_dict(
+                        torch.load(f"./models/model_{load_model}_incomplete")
+                    )
                 self.policy_net.eval()
             else:
                 self.policy_net = DQN().to(device)
