@@ -223,6 +223,12 @@ class MAP:
         self.n_batches = 1
         self.score = 0
         self.top_score = 0
+        self.average_score = 0
+        self.average_score_max = 0
+        self.average_total_sum = 30
+        self.small_score_average_data = []
+        self.small_score_average = 0
+        self.small_score_average_max = 0
         self.previous_loss = 0
         self.random_threshold = round(
             EPS_END + (EPS_START - EPS_END) * math.exp(-1.0 * self.n_steps / EPS_DECAY),
@@ -477,10 +483,29 @@ class MAP:
         self.previous_apple_distance = distance
         return reward
 
-    def calulate_scores(self):
+    def calculate_scores(self):
         self.score = self.snake.length - START_LENGTH
         if self.score > self.top_score:
             self.top_score = self.score
+
+    def calculate_averages(self):
+        self.average_score = (
+            self.average_score * (self.n_episodes - 1) + self.score
+        ) / self.n_episodes
+
+        if self.average_score > self.average_score_max:
+            self.average_score_max = self.average_score
+
+        # Calculate the score average of the x last episodes
+        self.small_score_average_data.append(self.score)
+        if len(self.small_score_average_data) >= self.average_total_sum + 1:
+            self.small_score_average_data = self.small_score_average_data[1:]
+        self.small_score_average = (
+            sum(self.small_score_average_data) / self.average_total_sum
+        )
+
+        if self.small_score_average > self.small_score_average_max:
+            self.small_score_average_max = self.small_score_average
 
     def game_mechanics(self):
         screen.fill((0, 0, 0))
@@ -489,7 +514,7 @@ class MAP:
         self.move_snake()
         self.apple_overlap = self.is_apple_overlap()
         self.snake.draw_snake()
-        self.calulate_scores()
+        self.calculate_scores()
         self.show_info()
 
     def store_state_action(self, state, action, next_state, reward):
@@ -572,10 +597,12 @@ class MAP:
 
                 self.store_state_action(state, action, observation, reward)
 
+                # Adjust average score
+                # Must happen before reset map, depends on self.n_episodes
+                self.calculate_averages()
+
                 # Use reset map instead of pygame.quit()
                 self.reset_map()
-
-                # Adjust average score
 
                 terminated = True
 
