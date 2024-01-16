@@ -333,6 +333,7 @@ class MAP:
             ("Score", self.score),
             ("Top Score", self.top_score),
             ("Loss", self.previous_loss),
+            ("Threshold", self.random_threshold),
         ]
 
     def show_info(self):
@@ -476,6 +477,11 @@ class MAP:
         self.previous_apple_distance = distance
         return reward
 
+    def calulate_scores(self):
+        self.score = self.snake.length - START_LENGTH
+        if self.score > self.top_score:
+            self.top_score = self.score
+
     def game_mechanics(self):
         screen.fill((0, 0, 0))
         self.draw_map()
@@ -483,6 +489,7 @@ class MAP:
         self.move_snake()
         self.apple_overlap = self.is_apple_overlap()
         self.snake.draw_snake()
+        self.calulate_scores()
         self.show_info()
 
     def store_state_action(self, state, action, next_state, reward):
