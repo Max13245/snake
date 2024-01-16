@@ -82,14 +82,6 @@ class DQN(nn.Module):
 class SNAKE:
     def __init__(self, size_x, size_y, autonomous, load_model):
         if autonomous:
-            """
-            NN inputs:
-                Every square has a value
-                0 = Nothing on square
-                1 = Snake body on square
-                2 = Snake head on square
-                3 = Apple on square
-            """
             if load_model:
                 self.policy_net = DQN().to(device)
                 try:
