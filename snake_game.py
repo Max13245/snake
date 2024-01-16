@@ -42,7 +42,7 @@ LR = 1e-4
 N_ACTIONS = 4
 
 ACTION_OPTIONS = ["up", "right", "down", "left"]
-N_EPISODES = 16384
+N_EPISODES = 1024
 
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
@@ -328,88 +328,29 @@ class MAP:
         self.snake.move()
         self.snake.move_head(self.direction)
 
+    def update_information_types(self):
+        self.information_types = [
+            ("Episode", self.n_episodes),
+            ("Step", self.n_steps),
+            ("Batch", self.n_batches),
+            ("Score", self.score),
+            ("Top Score", self.top_score),
+            ("Loss", self.previous_loss),
+        ]
+
     def show_info(self):
         if not self.show_information:
             return
 
-        # Episode
-        episode_text = font.render(f"Episode: {self.n_episodes}", True, BLACK)
-        episode_text_rect = episode_text.get_rect()
-        episode_text_rect.topleft = (5, 5)
-        screen.blit(episode_text, episode_text_rect)
+        self.update_information_types()
 
-        # Step
-        step_text = font.render(f"Step: {self.n_steps}", True, BLACK)
-        step_text_rect = step_text.get_rect()
-        step_text_rect.topleft = (5, episode_text_rect.height + 10)
-        screen.blit(step_text, step_text_rect)
-
-        # Batch
-        batch_text = font.render(f"Batch: {self.n_batches}", True, BLACK)
-        batch_text_rect = batch_text.get_rect()
-        batch_text_rect.topleft = (
-            5,
-            episode_text_rect.height + step_text_rect.height + 15,
-        )
-        screen.blit(batch_text, batch_text_rect)
-
-        # Score
-        self.score = self.snake.length - START_LENGTH
-        score_text = font.render(f"Score: {self.score}", True, BLACK)
-        score_text_rect = score_text.get_rect()
-        score_text_rect.topleft = (
-            5,
-            episode_text_rect.height
-            + step_text_rect.height
-            + batch_text_rect.height
-            + 20,
-        )
-        screen.blit(score_text, score_text_rect)
-
-        # Top score
-        if self.score > self.top_score:
-            self.top_score = self.score
-
-        top_score_text = font.render(f"Top score: {self.top_score}", True, BLACK)
-        top_score_text_rect = top_score_text.get_rect()
-        top_score_text_rect.topleft = (
-            5,
-            episode_text_rect.height
-            + step_text_rect.height
-            + batch_text_rect.height
-            + score_text_rect.height
-            + 25,
-        )
-        screen.blit(top_score_text, top_score_text_rect)
-
-        # Previous loss
-        loss_text = font.render(f"Loss: {self.previous_loss}", True, BLACK)
-        loss_text_rect = loss_text.get_rect()
-        loss_text_rect.topleft = (
-            5,
-            episode_text_rect.height
-            + step_text_rect.height
-            + batch_text_rect.height
-            + score_text_rect.height
-            + top_score_text_rect.height
-            + 30,
-        )
-        screen.blit(loss_text, loss_text_rect)
-
-        # Random threshold
-        threshold_text = font.render(f"Threshold: {self.random_threshold}", True, BLACK)
-        threshold_text_rect = threshold_text.get_rect()
-        threshold_text_rect.topleft = (
-            5,
-            episode_text_rect.height
-            + step_text_rect.height
-            + batch_text_rect.height
-            + score_text_rect.height
-            + top_score_text_rect.height
-            + loss_text_rect.height
-            + 35,
-        )
-        screen.blit(threshold_text, threshold_text_rect)
+        text_x_position, text_y_position = 5, 5
+        for info in self.information_types:
+            text = font.render(f"{info[0]}: {info[1]}", True, BLACK)
+            text_rect = text.get_rect()
+            text_rect.topleft = (text_x_position, text_y_position)
+            screen.blit(text, text_rect)
+            text_y_position += text_rect.height + 5
 
     def user_control(self):
         for event in pygame.event.get():
@@ -629,6 +570,8 @@ class MAP:
 
                 # Use reset map instead of pygame.quit()
                 self.reset_map()
+
+                # Adjust average score
 
                 terminated = True
 
