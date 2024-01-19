@@ -191,8 +191,8 @@ class SNAKE:
 
 
 class MAP:
-    def __init__(self, size, load_model, autonomous):
-        self.autonomous = autonomous
+    def __init__(self, size, user_defined):
+        self.autonomous = user_defined["autonomous"]
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
         self.tiles = []
@@ -202,7 +202,7 @@ class MAP:
         self.snake = SNAKE(
             self.x_blocks,
             self.y_blocks,
-            load_model,
+            user_defined["load_model"],
         )
         self.last_direction = "right"
         self.direction = "right"
@@ -226,6 +226,7 @@ class MAP:
         self.small_score_average = 0
         self.small_score_average_max = 0
         self.previous_loss = 0
+        self.use_threshold = user_defined["threshold"]
         self.random_threshold = round(
             EPS_END + (EPS_START - EPS_END) * math.exp(-1.0 * self.n_steps / EPS_DECAY),
             2,
@@ -329,6 +330,7 @@ class MAP:
 
     def update_information_types(self):
         if self.autonomous:
+            # Only add threshold to the list if use_threshold is true
             self.information_types = [
                 ("Episode", self.n_episodes),
                 ("Step", self.n_steps),
@@ -340,8 +342,7 @@ class MAP:
                 ("Small Average Score", self.small_score_average),
                 ("Small Average Score Max", self.small_score_average_max),
                 ("Loss", self.previous_loss),
-                ("Threshold", self.random_threshold),
-            ]
+            ] + ([("Threshold", self.random_threshold)] if self.use_threshold else [])
         else:
             self.information_types = [
                 ("Score", self.score),
@@ -630,7 +631,9 @@ class MAP:
             -1.0 * self.n_steps / EPS_DECAY
         )
         self.random_threshold = round(step_threshold, 2)
-        if sample > step_threshold or step_threshold <= 0.06:
+        if (
+            sample > step_threshold or step_threshold <= 0.06
+        ) or not self.use_threshold:
             with torch.no_grad():
                 self.snake.current_color = BLUE
                 # Will return a list of relu values
@@ -725,16 +728,26 @@ def get_n_models(path):
     return n_models
 
 
-autonomous = input("Autonomous: ")
-if autonomous.lower() != "y":
-    snake_map = MAP(MAP_SIZE, None, False)
+# All user defined parameters (later altered by user)
+user_defined = {"autonomous": False, "load_model": None, "threshold": False}
+
+
+autonomous = True if input("Autonomous: ").lower() == "y" else False
+user_defined["autonomous"] = autonomous
+
+if not autonomous:
+    snake_map = MAP(MAP_SIZE, user_defined)
     snake_map.run_user_game_loop()
     quit()
 
 load_model = input("Load model: ")
+user_defined["load_model"] = load_model
+use_threshold = True if input("Threshold: ").lower() == "y" else False
+user_defined["threshold"] = use_threshold
+
 
 # Only init one time, since policy network is inside
-snake_map = MAP(MAP_SIZE, load_model, True)
+snake_map = MAP(MAP_SIZE, user_defined)
 
 for i_episode in range(N_EPISODES):
     # Initialize the environment and get it's state
