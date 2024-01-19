@@ -191,7 +191,8 @@ class SNAKE:
 
 
 class MAP:
-    def __init__(self, size, load_model):
+    def __init__(self, size, load_model, autonomous):
+        self.autonomous = autonomous
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
         self.tiles = []
@@ -327,19 +328,24 @@ class MAP:
         self.snake.move_head(self.direction)
 
     def update_information_types(self):
-        self.information_types = [
-            ("Episode", self.n_episodes),
-            ("Step", self.n_steps),
-            ("Batch", self.n_batches),
-            ("Score", self.score),
-            ("Top Score", self.top_score),
-            ("Average Score", self.average_score),
-            ("Average Score Max", self.average_score_max),
-            ("Small Average Score", self.small_score_average),
-            ("Small Average Score Max", self.small_score_average_max),
-            ("Loss", self.previous_loss),
-            ("Threshold", self.random_threshold),
-        ]
+        if self.autonomous:
+            self.information_types = [
+                ("Episode", self.n_episodes),
+                ("Step", self.n_steps),
+                ("Batch", self.n_batches),
+                ("Score", self.score),
+                ("Top Score", self.top_score),
+                ("Average Score", self.average_score),
+                ("Average Score Max", self.average_score_max),
+                ("Small Average Score", self.small_score_average),
+                ("Small Average Score Max", self.small_score_average_max),
+                ("Loss", self.previous_loss),
+                ("Threshold", self.random_threshold),
+            ]
+        else:
+            self.information_types = [
+                ("Score", self.score),
+            ]
 
     def show_info(self):
         if not self.show_information:
@@ -721,14 +727,14 @@ def get_n_models(path):
 
 autonomous = input("Autonomous: ")
 if autonomous.lower() != "y":
-    snake_map = MAP(MAP_SIZE, None)
+    snake_map = MAP(MAP_SIZE, None, False)
     snake_map.run_user_game_loop()
     quit()
 
 load_model = input("Load model: ")
 
 # Only init one time, since policy network is inside
-snake_map = MAP(MAP_SIZE, load_model)
+snake_map = MAP(MAP_SIZE, load_model, True)
 
 for i_episode in range(N_EPISODES):
     # Initialize the environment and get it's state
