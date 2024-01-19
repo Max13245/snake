@@ -80,29 +80,26 @@ class DQN(nn.Module):
 
 
 class SNAKE:
-    def __init__(self, size_x, size_y, autonomous, load_model):
-        if autonomous:
-            if load_model:
-                self.policy_net = DQN().to(device)
-                try:
-                    self.policy_net.load_state_dict(
-                        torch.load(f"./models/model_{load_model}")
-                    )
-                except:
-                    self.policy_net.load_state_dict(
-                        torch.load(f"./models/model_{load_model}_incomplete")
-                    )
-                self.policy_net.eval()
-            else:
-                self.policy_net = DQN().to(device)
+    def __init__(self, size_x, size_y, load_model):
+        if load_model:
+            self.policy_net = DQN().to(device)
+            try:
+                self.policy_net.load_state_dict(
+                    torch.load(f"./models/model_{load_model}")
+                )
+            except:
+                self.policy_net.load_state_dict(
+                    torch.load(f"./models/model_{load_model}_incomplete")
+                )
+            self.policy_net.eval()
+        else:
+            self.policy_net = DQN().to(device)
 
-            self.target_net = DQN().to(device)
-            self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net = DQN().to(device)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
-            self.optimizer = optim.AdamW(
-                self.policy_net.parameters(), lr=LR, amsgrad=True
-            )
-            self.memory = ReplayMemory(10000)
+        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
+        self.memory = ReplayMemory(10000)
 
         self.speed = int(size_x / 10)
         self.length = START_LENGTH
@@ -194,8 +191,7 @@ class SNAKE:
 
 
 class MAP:
-    def __init__(self, size, autonomous, load_model):
-        self.autonomous = autonomous
+    def __init__(self, size, load_model):
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
         self.tiles = []
@@ -205,7 +201,6 @@ class MAP:
         self.snake = SNAKE(
             self.x_blocks,
             self.y_blocks,
-            self.autonomous,
             load_model,
         )
         self.last_direction = "right"
@@ -725,39 +720,40 @@ def get_n_models(path):
 
 
 autonomous = input("Autonomous: ")
-if not autonomous:
-    snake_map = MAP(MAP_SIZE, autonomous, None)
+if autonomous.lower() != "y":
+    snake_map = MAP(MAP_SIZE, None)
     snake_map.run_user_game_loop()
-else:
-    load_model = input("Load model: ")
+    quit()
 
-    # Only init one time, since policy network is inside
-    snake_map = MAP(MAP_SIZE, autonomous, load_model)
+load_model = input("Load model: ")
 
-    for i_episode in range(N_EPISODES):
-        # Initialize the environment and get it's state
-        quit_event = snake_map.run_autonomous_game_loop()
+# Only init one time, since policy network is inside
+snake_map = MAP(MAP_SIZE, load_model)
 
-        # Don't run again in case of quit_event
-        if quit_event:
-            break
+for i_episode in range(N_EPISODES):
+    # Initialize the environment and get it's state
+    quit_event = snake_map.run_autonomous_game_loop()
 
-    # Only quit pygame after the entire training loop is done
-    pygame.quit()
-
-    # Save model
-    models_path = "./models/"
-    n_models = get_n_models(models_path)
-
-    # Add suffix when model has not completed training
+    # Don't run again in case of quit_event
     if quit_event:
-        print("Saved as incomplete model")
-        model_suffix = "_incomplete"
-    else:
-        print("Saved as complete model")
-        model_suffix = ""
+        break
 
-    torch.save(
-        snake_map.snake.policy_net.state_dict(),
-        f"{models_path}model_{n_models}{model_suffix}",
-    )
+# Only quit pygame after the entire training loop is done
+pygame.quit()
+
+# Save model
+models_path = "./models/"
+n_models = get_n_models(models_path)
+
+# Add suffix when model has not completed training
+if quit_event:
+    print("Saved as incomplete model")
+    model_suffix = "_incomplete"
+else:
+    print("Saved as complete model")
+    model_suffix = ""
+
+torch.save(
+    snake_map.snake.policy_net.state_dict(),
+    f"{models_path}model_{n_models}{model_suffix}",
+)
