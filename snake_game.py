@@ -549,7 +549,7 @@ class MAP:
         return math.sqrt(self.maximum_apple_reward - self.snake.length / MAP_SIZE**2)
 
     def calculate_collision_reward(self) -> float:
-        return -math.pow(self.snake.length / MAP_SIZE**2)
+        return -((self.snake.length / MAP_SIZE**2) ** 2)
 
     def run_autonomous_game_loop(self):
         state = None
