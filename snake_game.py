@@ -104,6 +104,12 @@ class SNAKE:
 
         self.display = display
 
+        # Functions change based on the display mode
+        if self.display:
+            self.initiate_body = self.initiate_body_display
+        else:
+            self.initiate_body = self.initiate_body_nondisplay
+
         # Only create variables needed for current display setting
         self.length = START_LENGTH
         self.position = (16, 15)
@@ -129,18 +135,17 @@ class SNAKE:
         self.body.append(limb)
         self.length += 1
 
-    def initiate_body(self):
-        if self.display:
-            for i in range(self.length):
-                limb = pygame.Rect(
-                    (self.position[0] - i * self.size_x),
-                    self.position[1],
-                    self.limb_size_x,
-                    self.limb_size_y,
-                )
-                self.body.append(limb)
-            return
+    def initiate_body_display(self):
+        for i in range(self.length):
+            limb = pygame.Rect(
+                (self.position[0] - i * self.size_x),
+                self.position[1],
+                self.limb_size_x,
+                self.limb_size_y,
+            )
+            self.body.append(limb)
 
+    def initiate_body_nondisplay(self):
         for i in range(self.length):
             body_position = (self.position[0] - i, self.position[1])
             self.body.append(body_position)
@@ -569,6 +574,7 @@ class MAP:
         return math.sqrt(self.maximum_apple_reward - self.snake.length / MAP_SIZE**2)
 
     def calculate_collision_reward(self) -> float:
+        # TODO Make bigger/smaller?
         return -((self.snake.length / MAP_SIZE**2) ** 2)
 
     def run_autonomous_game_loop(self):
