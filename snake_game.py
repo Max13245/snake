@@ -548,6 +548,9 @@ class MAP:
     def calculate_apple_reward(self) -> float:
         return math.sqrt(self.maximum_apple_reward - self.snake.length / MAP_SIZE**2)
 
+    def calculate_collision_reward(self) -> float:
+        return -math.pow(self.snake.length / MAP_SIZE**2)
+
     def run_autonomous_game_loop(self):
         state = None
         next_state = None
@@ -608,7 +611,8 @@ class MAP:
             # TODO: Maybe differenciate between wall and snake collision
             if self.snake.wall_collision() or self.snake.tangled():
                 observation = None
-                reward = -0.7
+
+                reward = self.calculate_collision_reward()
 
                 self.store_state_action(state, action, observation, reward)
 
