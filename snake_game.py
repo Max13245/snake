@@ -213,6 +213,9 @@ class MAP:
         self.maximum_apple_radius_reward = 0.2
         self.previous_apple_distance = self.calculate_apple_distance()
 
+        # Maximum apple reward, will be less based on snakes length
+        self.maximum_apple_reward = 1
+
         # Info for screen
         self.n_episodes = 1
         self.n_steps = 1
@@ -506,6 +509,7 @@ class MAP:
         # Calculate the score average of the x last episodes
         self.small_score_average_data.append(self.score)
         if len(self.small_score_average_data) >= self.average_total_sum + 1:
+            # TODO: Use deque
             self.small_score_average_data = self.small_score_average_data[1:]
         self.small_score_average = round(
             sum(self.small_score_average_data) / self.average_total_sum, 2
@@ -541,6 +545,9 @@ class MAP:
             ] * TAU + target_net_state_dict[key] * (1 - TAU)
         self.snake.target_net.load_state_dict(target_net_state_dict)
 
+    def calculate_apple_reward(self) -> float:
+        return math.sqrt(self.maximum_apple_reward - self.snake.length / MAP_SIZE**2)
+
     def run_autonomous_game_loop(self):
         state = None
         next_state = None
@@ -562,7 +569,8 @@ class MAP:
 
                 # Get positive reward when apple overlap happens
                 if self.apple_overlap:
-                    reward = 1
+                    # Calculate positive apple reward based on snake length
+                    reward = self.calculate_apple_reward()
 
                 if not (reward >= 1):
                     reward += self.get_apple_radius_reward()
@@ -674,7 +682,6 @@ class MAP:
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to policy_net
-        # TODO: Gathers right action?
         state_action_values = self.snake.policy_net(state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
