@@ -80,9 +80,10 @@ class DQN(nn.Module):
 
 
 class SNAKE:
-    def __init__(self, size_x, size_y, load_model):
+    def __init__(self, size_x, size_y, load_model, display):
         if load_model:
             self.policy_net = DQN().to(device)
+            # TODO: Don't use try except (use handler for this anyway)
             try:
                 self.policy_net.load_state_dict(
                     torch.load(f"./models/model_{load_model}")
@@ -101,14 +102,25 @@ class SNAKE:
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
-        self.speed = int(size_x / 10)
+        self.display = display
+
+        # Only create variables needed for current display setting
         self.length = START_LENGTH
-        self.size_x, self.size_y = size_x, size_y
-        self.limb_size_x, self.limb_size_y = size_x, size_y
-        self.position = (16 * self.size_x, 15 * self.size_y)
+        self.position = (16, 15)
+
+        if self.display:
+            self.speed = int(size_x / 10)
+            self.size_x, self.size_y = size_x, size_y
+            self.limb_size_x, self.limb_size_y = size_x, size_y
+            self.position = (
+                self.position[0] * self.size_x,
+                self.position[1] * self.size_y,
+            )
+            self.current_color = BLUE
+
+        # self.body can have different data types for different display settings
         self.body = []
         self.initiate_body()
-        self.current_color = BLUE
 
     def create_limb(self):
         limb = pygame.Rect(
@@ -118,14 +130,20 @@ class SNAKE:
         self.length += 1
 
     def initiate_body(self):
+        if self.display:
+            for i in range(self.length):
+                limb = pygame.Rect(
+                    (self.position[0] - i * self.size_x),
+                    self.position[1],
+                    self.limb_size_x,
+                    self.limb_size_y,
+                )
+                self.body.append(limb)
+            return
+
         for i in range(self.length):
-            limb = pygame.Rect(
-                (self.position[0] - i * self.size_x),
-                self.position[1],
-                self.limb_size_x,
-                self.limb_size_y,
-            )
-            self.body.append(limb)
+            body_position = (self.position[0] - i, self.position[1])
+            self.body.append(body_position)
 
     def draw_snake(self):
         for limb in self.body:
@@ -193,6 +211,7 @@ class SNAKE:
 class MAP:
     def __init__(self, size, user_defined):
         self.autonomous = user_defined["autonomous"]
+        self.display = user_defined["display"]
         self.x_blocks, self.y_blocks = width / size, height / size
         self.block_size = size
         self.tiles = []
@@ -203,6 +222,7 @@ class MAP:
             self.x_blocks,
             self.y_blocks,
             user_defined["load_model"],
+            self.display,
         )
         self.last_direction = "right"
         self.direction = "right"
@@ -740,11 +760,19 @@ def get_n_models(path):
 
 
 # All user defined parameters (later altered by user)
-user_defined = {"autonomous": False, "load_model": None, "threshold": False}
+user_defined = {
+    "autonomous": False,
+    "display": True,
+    "load_model": None,
+    "threshold": False,
+}
 
 
 autonomous = True if input("Autonomous: ").lower() == "y" else False
 user_defined["autonomous"] = autonomous
+
+display = True if input("Display: ").lower() == "y" else False
+user_defined["display"] = display
 
 if not autonomous:
     snake_map = MAP(MAP_SIZE, user_defined)
@@ -762,6 +790,7 @@ snake_map = MAP(MAP_SIZE, user_defined)
 
 for i_episode in range(N_EPISODES):
     # Initialize the environment and get it's state
+    # TODO: Maybe find something else for quit_event variable chain
     quit_event = snake_map.run_autonomous_game_loop()
 
     # Don't run again in case of quit_event
@@ -771,7 +800,7 @@ for i_episode in range(N_EPISODES):
 # Only quit pygame after the entire training loop is done
 pygame.quit()
 
-# Save model
+# Save model TODO: Use handler (handler need swap model function)
 models_path = "./models/"
 n_models = get_n_models(models_path)
 
