@@ -104,7 +104,7 @@ class SNAKE_BRAIN:
 
 
 class SNAKE_CALCULATE(SNAKE_BRAIN):
-    def __init__(self, size_x, size_y, load_model) -> None:
+    def __init__(self, load_model) -> None:
         super().__init__(load_model)
 
         self.length = START_LENGTH
@@ -234,11 +234,7 @@ class MAP:
                 user_defined["load_model"],
             )
         else:
-            self.snake = SNAKE_CALCULATE(
-                self.x_blocks,
-                self.y_blocks,
-                user_defined["load_model"],
-            )
+            self.snake = SNAKE_CALCULATE(user_defined["load_model"])
 
         self.last_direction = "right"
         self.direction = "right"
@@ -273,7 +269,7 @@ class MAP:
 
         self.show_information = True
 
-    def create_map(self):
+    def create_map(self):  # MAP
         for i in range(self.block_size):
             row = []
             for j in range(self.block_size):
@@ -296,21 +292,21 @@ class MAP:
 
             self.tiles.append(row)
 
-    def draw_map(self):
+    def draw_map(self):  # MAP
         for row in self.tiles:
             for tile in row:
                 pygame.draw.rect(screen, tile[1], tile[0])
 
-    def show_apple(self):
+    def show_apple(self):  # MAP
         screen.blit(
             self.apple, self.tiles[self.apple_possition_x][self.apple_possition_y][0]
         )
 
-    def reposition_apple(self):
+    def reposition_apple(self):  # GAME_MECH
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
 
-    def is_apple_overlap(self):
+    def is_apple_overlap(self):  # GAME_MECH
         if (
             self.apple_possition_x * self.x_blocks == self.snake.body[0].x
             and self.apple_possition_y * self.y_blocks == self.snake.body[0].y
@@ -320,13 +316,13 @@ class MAP:
             return True
         return False
 
-    def create_apple(self):
+    def create_apple(self):  # MAP
         apple_img = pygame.image.load("apple.png")
         return pygame.transform.scale(
             apple_img, (int(self.x_blocks), int(self.y_blocks))
         )
 
-    def calculate_apple_distance(self):
+    def calculate_apple_distance(self):  # GAME_MECH
         x_distance = np.abs(
             self.apple_possition_x - self.snake.body[0].x / self.x_blocks
         )
@@ -338,7 +334,7 @@ class MAP:
         total_distance = x_distance + y_distance
         return total_distance
 
-    def at_intersection(self):
+    def at_intersection(self):  # GAME_MECH
         if (
             self.snake.body[0].x % self.x_blocks == 0
             and self.snake.body[0].y % self.y_blocks == 0
@@ -346,7 +342,7 @@ class MAP:
             return True
         return False
 
-    def is_reverse(self, current, new):
+    def is_reverse(self, current, new):  # GAME_MECH
         if current == "up" and new == "down":
             return True
         if current == "right" and new == "left":
@@ -357,7 +353,7 @@ class MAP:
             return True
         return False
 
-    def move_snake(self):
+    def move_snake(self):  # GAME_MECH
         if self.at_intersection():
             if not self.is_reverse(self.direction, self.last_direction):
                 self.direction = self.last_direction
@@ -367,7 +363,7 @@ class MAP:
         self.snake.move()
         self.snake.move_head(self.direction)
 
-    def update_information_types(self):
+    def update_information_types(self):  # MAP? # GAME_MECH
         if self.autonomous:
             # Only add threshold to the list if use_threshold is true
             self.information_types = [
@@ -387,7 +383,7 @@ class MAP:
                 ("Score", self.score),
             ]
 
-    def show_info(self):
+    def show_info(self):  # MAP
         if not self.show_information:
             return
 
@@ -401,7 +397,7 @@ class MAP:
             screen.blit(text, text_rect)
             text_y_position += text_rect.height + 5
 
-    def user_control(self):
+    def user_control(self):  # MAP
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -419,7 +415,7 @@ class MAP:
 
         return False
 
-    def run_user_game_loop(self):
+    def run_user_game_loop(self):  # GAME_MECH
         while True:
             truncated = self.user_control()
             if truncated:
@@ -434,7 +430,7 @@ class MAP:
             pygame.display.update()
             clock.tick(60)
 
-    def get_state(self):
+    def get_state(self):  # GAME_MECH
         """
         1. Head position                             2
         2. Apple position                            2
@@ -449,7 +445,7 @@ class MAP:
         ]
         apple_position = [self.apple_possition_x, self.apple_possition_y]
 
-        # Funky code, probably inefficient, just testing something
+        # TODO Funky code, probably inefficient, just testing something
         up_distances = []
         down_distances = []
         left_distances = []
@@ -490,10 +486,10 @@ class MAP:
         state = head_position + apple_position + distances + [current_direction]
         return np.array(state)
 
-    def AI_control(self, action):
+    def AI_control(self, action):  # GAME_MECH
         self.last_direction = ACTION_OPTIONS[action]
 
-    def check_quit_event(self):
+    def check_quit_event(self):  # GAME_MECH
         # Check for quit event
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -504,7 +500,7 @@ class MAP:
                     self.show_information ^= True
         return False
 
-    def get_apple_radius_reward(self):
+    def get_apple_radius_reward(self):  # GAME_MECH
         # If apple is recieved in this round then skip radius reward
         if self.apple_overlap:
             return 0
@@ -528,12 +524,12 @@ class MAP:
         self.previous_apple_distance = distance
         return reward
 
-    def calculate_scores(self):
+    def calculate_scores(self):  # GAME_MECH
         self.score = self.snake.length - START_LENGTH
         if self.score > self.top_score:
             self.top_score = self.score
 
-    def calculate_averages(self):
+    def calculate_averages(self):  # GAME_MECH
         self.average_score = round(
             (self.average_score * (self.n_episodes - 1) + self.score) / self.n_episodes,
             2,
@@ -554,7 +550,7 @@ class MAP:
         if self.small_score_average > self.small_score_average_max:
             self.small_score_average_max = self.small_score_average
 
-    def game_mechanics(self):
+    def game_mechanics(self):  # GAME_MECH
         screen.fill((0, 0, 0))
         self.draw_map()
         self.show_apple()
@@ -564,14 +560,14 @@ class MAP:
         self.calculate_scores()
         self.show_info()
 
-    def store_state_action(self, state, action, next_state, reward):
+    def store_state_action(self, state, action, next_state, reward):  # SNAKE_HEAD
         # Create reward tensor
         reward_tensor = torch.tensor([reward], device=device)
 
         # Create a transition
         self.snake.memory.push(state, action, next_state, reward_tensor)
 
-    def soft_update_target_net(self):
+    def soft_update_target_net(self):  # SNAKE_BRAIN
         # Soft update of the target network's weights
         target_net_state_dict = self.snake.target_net.state_dict()
         policy_net_state_dict = self.snake.policy_net.state_dict()
@@ -581,14 +577,14 @@ class MAP:
             ] * TAU + target_net_state_dict[key] * (1 - TAU)
         self.snake.target_net.load_state_dict(target_net_state_dict)
 
-    def calculate_apple_reward(self) -> float:
+    def calculate_apple_reward(self) -> float:  # GAME_MECH
         return math.sqrt(self.maximum_apple_reward - self.snake.length / MAP_SIZE**2)
 
-    def calculate_collision_reward(self) -> float:
+    def calculate_collision_reward(self) -> float:  # GAME_MECH
         # TODO Make bigger/smaller?
         return -((self.snake.length / MAP_SIZE**2) ** 2)
 
-    def run_autonomous_game_loop(self):
+    def run_autonomous_game_loop(self):  # GAME_MECH
         state = None
         next_state = None
         truncated = False  # TODO: Necessary?
@@ -674,7 +670,7 @@ class MAP:
 
         return quit_event
 
-    def select_action(self, state):
+    def select_action(self, state):  # ?
         sample = np.random.random()
         step_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
             -1.0 * self.n_steps / EPS_DECAY
@@ -697,7 +693,7 @@ class MAP:
             random_action = torch.tensor(random_array).max(0).indices.view(1, 1)
             return random_action
 
-    def optimize_model(self):
+    def optimize_model(self):  # DQN
         if len(self.snake.memory) < BATCH_SIZE:
             return
         transitions = self.snake.memory.sample(BATCH_SIZE)
@@ -752,7 +748,7 @@ class MAP:
         self.snake.optimizer.step()
         self.n_batches += 1
 
-    def reset_map(self):
+    def reset_map(self):  # GAME_MECH
         """Reset the map, so pygame.init doesn't have to run every training loop"""
         self.reposition_apple()
         self.last_direction = "right"
@@ -767,6 +763,10 @@ class MAP:
 
         # Must be called after repositioning snake and apple
         self.previous_apple_distance = self.calculate_apple_distance()
+
+
+class GAME_MECHANICS:
+    pass
 
 
 def get_n_models(path):
