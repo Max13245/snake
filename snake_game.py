@@ -79,8 +79,8 @@ class DQN(nn.Module):
         return x
 
 
-class SNAKE:
-    def __init__(self, size_x, size_y, load_model, display):
+class SNAKE_BRAIN:
+    def __init__(self, load_model):
         if load_model:
             self.policy_net = DQN().to(device)
             # TODO: Don't use try except (use handler for this anyway)
@@ -102,29 +102,37 @@ class SNAKE:
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
 
-        self.display = display
 
-        # Functions change based on the display mode
-        if self.display:
-            self.initiate_body = self.initiate_body_display
-        else:
-            self.initiate_body = self.initiate_body_nondisplay
+class SNAKE_CALCULATE(SNAKE_BRAIN):
+    def __init__(self, size_x, size_y, load_model) -> None:
+        super().__init__(load_model)
+
+        self.length = START_LENGTH
+        self.position = (16, 15)
+        self.body = []
+        self.initiate_body()
+
+    def initiate_body(self):
+        for i in range(self.length):
+            body_position = (self.position[0] - i, self.position[1])
+            self.body.append(body_position)
+
+
+class SNAKE_DISPLAY(SNAKE_BRAIN):
+    def __init__(self, size_x, size_y, load_model) -> None:
+        super().__init__(load_model)
 
         # Only create variables needed for current display setting
         self.length = START_LENGTH
-        self.position = (16, 15)
+        self.speed = int(size_x / 10)
+        self.size_x, self.size_y = size_x, size_y
+        self.limb_size_x, self.limb_size_y = size_x, size_y
+        self.position = (
+            16 * self.size_x,
+            15 * self.size_y,
+        )
+        self.current_color = BLUE
 
-        if self.display:
-            self.speed = int(size_x / 10)
-            self.size_x, self.size_y = size_x, size_y
-            self.limb_size_x, self.limb_size_y = size_x, size_y
-            self.position = (
-                self.position[0] * self.size_x,
-                self.position[1] * self.size_y,
-            )
-            self.current_color = BLUE
-
-        # self.body can have different data types for different display settings
         self.body = []
         self.initiate_body()
 
@@ -135,7 +143,7 @@ class SNAKE:
         self.body.append(limb)
         self.length += 1
 
-    def initiate_body_display(self):
+    def initiate_body(self):
         for i in range(self.length):
             limb = pygame.Rect(
                 (self.position[0] - i * self.size_x),
@@ -144,11 +152,6 @@ class SNAKE:
                 self.limb_size_y,
             )
             self.body.append(limb)
-
-    def initiate_body_nondisplay(self):
-        for i in range(self.length):
-            body_position = (self.position[0] - i, self.position[1])
-            self.body.append(body_position)
 
     def draw_snake(self):
         for limb in self.body:
@@ -223,12 +226,20 @@ class MAP:
         self.map = self.create_map()
         self.apple = self.create_apple()
         self.reposition_apple()
-        self.snake = SNAKE(
-            self.x_blocks,
-            self.y_blocks,
-            user_defined["load_model"],
-            self.display,
-        )
+
+        if self.display:
+            self.snake = SNAKE_DISPLAY(
+                self.x_blocks,
+                self.y_blocks,
+                user_defined["load_model"],
+            )
+        else:
+            self.snake = SNAKE_CALCULATE(
+                self.x_blocks,
+                self.y_blocks,
+                user_defined["load_model"],
+            )
+
         self.last_direction = "right"
         self.direction = "right"
         self.apple_overlap = False
