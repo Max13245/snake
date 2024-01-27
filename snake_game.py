@@ -233,6 +233,7 @@ class GAME_NON_DISPLAY:
         # Move body parts before head
         self.snake.move()
         self.snake.move_head()
+        self.snake.previous_direction = self.snake.direction
 
     def update_information_types(self):
         # Only add threshold to the list if use_threshold is true
@@ -307,9 +308,6 @@ class GAME_NON_DISPLAY:
 
         state = head_position + apple_position + distances + [current_direction]
         return np.array(state)
-
-    def AI_control(self, action):  # Probably not needed
-        self.last_direction = ACTION_OPTIONS[action]
 
     def check_quit_event(self):  # Change to terminal somehow
         # Check for quit event
@@ -402,7 +400,7 @@ class GAME_NON_DISPLAY:
         # TODO Make bigger/smaller?
         return -((self.snake.length / MAP_SIZE**2) ** 2)
 
-    def run_autonomous_game_loop(self):  # GAME_MECH
+    def run_autonomous_game_loop(self):
         state = None
         next_state = None
         truncated = False  # TODO: Necessary?
@@ -439,7 +437,7 @@ class GAME_NON_DISPLAY:
 
             # Get and perform an action, only when at an intersection
             action = snake_map.select_action(state)
-            self.AI_control(action)
+            self.snake.direction = ACTION_OPTIONS[action]
 
             quit_event = self.check_quit_event()
             if quit_event:
@@ -480,7 +478,7 @@ class GAME_NON_DISPLAY:
 
         return quit_event
 
-    def select_action(self, state):  # Change (delete display options)
+    def select_action(self, state):
         sample = np.random.random()
         step_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
             -1.0 * self.n_steps / EPS_DECAY
@@ -490,14 +488,12 @@ class GAME_NON_DISPLAY:
             sample > step_threshold or step_threshold <= 0.06
         ) or not self.use_threshold:
             with torch.no_grad():
-                self.snake.current_color = BLUE
                 # Will return a list of relu values
                 output = self.snake.policy_net(state).max(1)
                 if output[0].item() > self.max_relu_value:
                     self.max_relu_value = output[0].item()
                 return output.indices.view(1, 1)
         else:
-            self.snake.current_color = RED
             # Return random values to explore new possibilities
             random_array = np.array(np.random.uniform(0, self.max_relu_value, 4))
             random_action = torch.tensor(random_array).max(0).indices.view(1, 1)
