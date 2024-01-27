@@ -15,13 +15,7 @@ class GAME_NON_DISPLAY:
         # This also creates the apple (tuple of coördinates)
         self.reposition_apple()
 
-        self.snake = SNAKE_CALCULATE(
-            user_defined["load_model"],
-            self.constants.N_ACTIONS,
-            self.constants.LR,
-            self.constants.DEVICE,
-            self.constants.START_LENGTH,
-        )
+        self.snake = SNAKE_CALCULATE(user_defined["load_model"], self.constants)
 
         self.apple_overlap = False
         self.max_relu_value = 0.0
@@ -126,7 +120,7 @@ class GAME_NON_DISPLAY:
                     continue
 
                 if abs(horizontal_distance) < left_row:
-                    left_row = abs(horizontal_distance)
+                    left_row = abs(horizontal_distance) - 1
             elif self.snake.body[body_indx][0] == head_x:
                 vertical_distance = self.snake.body[body_indx][1] - head_y
                 # Asumes the vertical distance is not zero
@@ -135,7 +129,7 @@ class GAME_NON_DISPLAY:
                     continue
 
                 if abs(vertical_distance) < above_column:
-                    above_column = abs(vertical_distance)
+                    above_column = abs(vertical_distance) - 1
 
         distances = [above_column, beneath_column, left_row, right_row]
 

@@ -2,10 +2,10 @@ from snake_brain import SNAKE_BRAIN
 
 
 class SNAKE_CALCULATE(SNAKE_BRAIN):
-    def __init__(self, load_model, n_actions, lr, device, start_length) -> None:
-        super().__init__(load_model, n_actions, lr, device)
+    def __init__(self, load_model, constants) -> None:
+        super().__init__(load_model, constants)
 
-        self.length = start_length
+        self.length = constants.START_LENGTH
         self.position = (16, 15)
         self.body = []
         self.initiate_body()
@@ -21,13 +21,13 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
 
     def correct_reverse(self):
         if self.previous_direction == "up" and self.direction == "down":
-            self.direction == "up"
+            self.direction = "up"
         elif self.previous_direction == "right" and self.direction == "left":
-            self.direction == "right"
+            self.direction = "right"
         elif self.previous_direction == "down" and self.direction == "up":
-            self.direction == "down"
+            self.direction = "down"
         elif self.previous_direction == "left" and self.direction == "right":
-            self.direction == "left"
+            self.direction = "left"
 
     def move_head(self):
         self.correct_reverse()
