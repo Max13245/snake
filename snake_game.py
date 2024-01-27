@@ -216,14 +216,8 @@ class GAME_NON_DISPLAY:
         return False
 
     def calculate_apple_distance(self):
-        x_distance = np.abs(
-            self.apple_possition_x - self.snake.body[0].x / self.x_blocks
-        )
-        x_distance = math.floor(x_distance)
-        y_distance = np.abs(
-            self.apple_possition_y - self.snake.body[0].y / self.y_blocks
-        )
-        y_distance = math.floor(y_distance)
+        x_distance = np.abs(self.apple_possition_x - self.snake.body[-1][0])
+        y_distance = np.abs(self.apple_possition_y - self.snake.body[-1][1])
         total_distance = x_distance + y_distance
         return total_distance
 
