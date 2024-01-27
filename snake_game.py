@@ -850,17 +850,13 @@ class GAME_NON_DISPLAY:
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
 
-    def is_apple_overlap(self):  # GAME_MECH
-        if (
-            self.apple_possition_x * self.x_blocks == self.snake.body[0].x
-            and self.apple_possition_y * self.y_blocks == self.snake.body[0].y
-        ):
-            self.snake.create_limb()
-            self.reposition_apple()
-            return True
+    def is_apple_overlap(self):
+        for cords in self.snake.body:
+            if cords == (self.apple_possition_x, self.apple_possition_y):
+                return True
         return False
 
-    def calculate_apple_distance(self):  # GAME_MECH
+    def calculate_apple_distance(self):
         x_distance = np.abs(
             self.apple_possition_x - self.snake.body[0].x / self.x_blocks
         )
@@ -872,25 +868,12 @@ class GAME_NON_DISPLAY:
         total_distance = x_distance + y_distance
         return total_distance
 
-    def at_intersection(self):  # No good
-        if (
-            self.snake.body[0].x % self.x_blocks == 0
-            and self.snake.body[0].y % self.y_blocks == 0
-        ):
-            return True
-        return False
-
-    def move_snake(self):  # GAME_MECH
-        if self.at_intersection():
-            if not self.is_reverse(self.direction, self.last_direction):
-                self.direction = self.last_direction
-            self.snake.update_limb_direction()
-
+    def move_snake(self):
         # Move body parts before head
         self.snake.move()
         self.snake.move_head()
 
-    def update_information_types(self):  # CHECK
+    def update_information_types(self):
         # Only add threshold to the list if use_threshold is true
         self.information_types = [
             ("Episode", self.n_episodes),
@@ -1040,12 +1023,8 @@ class GAME_NON_DISPLAY:
             self.small_score_average_max = self.small_score_average
 
     def game_mechanics(self):  # Change
-        screen.fill((0, 0, 0))
-        self.draw_map()
-        self.show_apple()
-        self.move_snake()
+        self.move_snake(self.apple_overlap)
         self.apple_overlap = self.is_apple_overlap()
-        self.snake.draw_snake()
         self.calculate_scores()
         self.show_info()
 
