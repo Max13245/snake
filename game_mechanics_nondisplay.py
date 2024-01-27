@@ -1,4 +1,5 @@
 from random import randint
+from os import system
 import torch
 import numpy as np
 import math
@@ -87,6 +88,7 @@ class GAME_NON_DISPLAY:
         ] + ([("Threshold", self.random_threshold)] if self.use_threshold else [])
 
     def show_info(self):
+        system("clear")
         self.update_information_types()
         print("-" * 50)
         for info in self.information_types:
