@@ -112,10 +112,38 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
         self.body = []
         self.initiate_body()
 
+        self.previous_direction = None
+        self.direction = "right"
+
+    def create_limb(self):
+        pass
+
     def initiate_body(self):
-        for i in range(self.length):
-            body_position = (self.position[0] - i, self.position[1])
+        # Reverse range, so head is at the end of the list
+        for i in range(self.length, 0, -1):
+            body_position = [self.position[0] - i, self.position[1]]
             self.body.append(body_position)
+
+    def move_head(self):
+        if self.direction == "up":
+            self.body[-1][1] -= 1
+        elif self.direction == "right":
+            self.body[-1][0] += 1
+        elif self.direction == "down":
+            self.body[-1][1] += 1
+        elif self.direction == "left":
+            self.body[-1][0] -= 1
+
+    def move(self, apple_overlap):
+        # Don't delete head when snake gets apple
+        if not apple_overlap:
+            del self.body[-1]
+
+    def wall_collision(self):
+        pass
+
+    def tangled(self):
+        pass
 
 
 class SNAKE_DISPLAY(SNAKE_BRAIN):
@@ -359,9 +387,9 @@ class GAME_DISPLAY:
                 self.direction = self.last_direction
             self.snake.update_limb_direction()
 
-        # Move body parts before head
-        self.snake.move()
+        # Move head before snake limbs
         self.snake.move_head(self.direction)
+        self.snake.move()
 
     def update_information_types(self):  # GAME_MECH
         if self.autonomous:
@@ -774,8 +802,6 @@ class GAME_NON_DISPLAY:
 
         self.snake = SNAKE_CALCULATE(user_defined["load_model"])
 
-        self.last_direction = "right"  # ?
-        self.direction = "right"  # ?
         self.apple_overlap = False
         self.max_relu_value = 0.0
 
@@ -860,7 +886,7 @@ class GAME_NON_DISPLAY:
 
         # Move body parts before head
         self.snake.move()
-        self.snake.move_head(self.direction)
+        self.snake.move_head()
 
     def update_information_types(self):  # CHECK
         # Only add threshold to the list if use_threshold is true
@@ -1266,8 +1292,6 @@ snake_map = (
     else GAME_NON_DISPLAY(MAP_SIZE, user_defined)
 )
 
-# TODO This loop does nothing...
-# Since loop is inside of object
 for i_episode in range(N_EPISODES):
     # Initialize the environment and get it's state
     # TODO: Maybe find something else for quit_event variable chain
