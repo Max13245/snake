@@ -121,18 +121,20 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
     def initiate_body(self):
         # Reverse range, so head is at the end of the list
         for i in range(self.length, 0, -1):
-            body_position = [self.position[0] - i, self.position[1]]
+            body_position = (self.position[0] - i, self.position[1])
             self.body.append(body_position)
 
     def move_head(self):
+        body_x = self.body[-1][0]
+        body_y = self.body[-1][1]
         if self.direction == "up":
-            self.body[-1][1] -= 1
+            self.body.append((body_x, body_y - 1))
         elif self.direction == "right":
-            self.body[-1][0] += 1
+            self.body.append((body_x + 1, body_y))
         elif self.direction == "down":
-            self.body[-1][1] += 1
+            self.body.append((body_x, body_y + 1))
         elif self.direction == "left":
-            self.body[-1][0] -= 1
+            self.body.append((body_x - 1, body_y))
 
     def move(self, apple_overlap):
         # Don't delete head when snake gets apple
