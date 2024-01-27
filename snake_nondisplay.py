@@ -46,6 +46,8 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
         # Don't delete head when snake gets apple
         if not apple_overlap:
             del self.body[0]
+        else:
+            self.length += 1
 
     def wall_collision(self):
         body_x = self.body[-1][0]
