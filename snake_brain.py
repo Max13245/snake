@@ -131,7 +131,6 @@ class SNAKE_BRAIN:
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-        self.previous_loss = round(loss.item(), 2)
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -140,3 +139,6 @@ class SNAKE_BRAIN:
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
+
+        # Return the loss for display
+        return round(loss.item(), 2)

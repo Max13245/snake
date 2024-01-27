@@ -278,7 +278,7 @@ class GAME_NON_DISPLAY:
 
             self.snake.soft_update_target_net()
             # Perform one step of the optimization (on the policy network)
-            self.snake.optimize_model()
+            self.previous_loss = self.snake.optimize_model()
             self.n_batches += 1
 
             # One step done
