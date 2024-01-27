@@ -73,7 +73,7 @@ class GAME_NON_DISPLAY:
 
     def move_snake(self):
         # Move body parts before head
-        self.snake.move()
+        self.snake.move(self.apple_overlap)
         self.snake.move_head()
         self.snake.previous_direction = self.snake.direction
 
@@ -139,7 +139,7 @@ class GAME_NON_DISPLAY:
 
         distances = [above_column, beneath_column, left_row, right_row]
 
-        current_direction = self.constants.ACTION_OPTIONS.index(self.last_direction)
+        current_direction = self.constants.ACTION_OPTIONS.index(self.snake.direction)
 
         state = head_position + apple_position + distances + [current_direction]
         return np.array(state)
@@ -203,8 +203,8 @@ class GAME_NON_DISPLAY:
         if self.small_score_average > self.small_score_average_max:
             self.small_score_average_max = self.small_score_average
 
-    def game_mechanics(self):  # Change
-        self.move_snake(self.apple_overlap)
+    def game_mechanics(self):
+        self.move_snake()
         self.apple_overlap = self.is_apple_overlap()
         self.calculate_scores()
         self.show_info()
@@ -402,7 +402,6 @@ class GAME_NON_DISPLAY:
 
         # Snake values
         self.snake.length = self.constants.START_LENGTH
-        self.snake.position = (16 * self.snake.size_x, 15 * self.snake.size_y)
         self.snake.body = []
         self.snake.initiate_body()
 
