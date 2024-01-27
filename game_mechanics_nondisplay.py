@@ -1,8 +1,8 @@
 from random import randint
 import torch
-import torch.nn as nn
 import numpy as np
 import math
+import keyboard
 
 from snake_nondisplay import SNAKE_CALCULATE
 
@@ -138,14 +138,10 @@ class GAME_NON_DISPLAY:
         state = head_position + apple_position + distances + [current_direction]
         return np.array(state)
 
-    def check_quit_event(self):  # Change to terminal somehow
-        # Check for quit event
-        """for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return True
-        return False"""
-        pass
+    def check_quit_event(self):
+        if keyboard.is_pressed("q"):
+            return True
+        return False
 
     def get_apple_radius_reward(self):  # Same
         # If apple is recieved in this round then skip radius reward
