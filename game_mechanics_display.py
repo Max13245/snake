@@ -94,11 +94,11 @@ class GAME_DISPLAY:
             self.apple, self.tiles[self.apple_possition_x][self.apple_possition_y][0]
         )
 
-    def reposition_apple(self):  # GAME_MECH
+    def reposition_apple(self):
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
 
-    def is_apple_overlap(self):  # GAME_MECH
+    def is_apple_overlap(self):
         if (
             self.apple_possition_x * self.x_blocks == self.snake.body[0].x
             and self.apple_possition_y * self.y_blocks == self.snake.body[0].y
@@ -114,7 +114,7 @@ class GAME_DISPLAY:
             apple_img, (int(self.x_blocks), int(self.y_blocks))
         )
 
-    def calculate_apple_distance(self):  # GAME_MECH
+    def calculate_apple_distance(self):
         x_distance = np.abs(
             self.apple_possition_x - self.snake.body[0].x / self.x_blocks
         )
@@ -126,7 +126,7 @@ class GAME_DISPLAY:
         total_distance = x_distance + y_distance
         return total_distance
 
-    def at_intersection(self):  # GAME_MECH
+    def at_intersection(self):
         if (
             self.snake.body[0].x % self.x_blocks == 0
             and self.snake.body[0].y % self.y_blocks == 0
@@ -209,7 +209,7 @@ class GAME_DISPLAY:
 
         return False
 
-    def run_user_game_loop(self):  # GAME_MECH
+    def run_user_game_loop(self):
         while True:
             truncated = self.user_control()
             if truncated:
@@ -318,12 +318,12 @@ class GAME_DISPLAY:
         self.previous_apple_distance = distance
         return reward
 
-    def calculate_scores(self):  # GAME_MECH
+    def calculate_scores(self):
         self.score = self.snake.length - self.constants.START_LENGTH
         if self.score > self.top_score:
             self.top_score = self.score
 
-    def calculate_averages(self):  # GAME_MECH
+    def calculate_averages(self):
         self.average_score = round(
             (self.average_score * (self.n_episodes - 1) + self.score) / self.n_episodes,
             2,
@@ -344,7 +344,7 @@ class GAME_DISPLAY:
         if self.small_score_average > self.small_score_average_max:
             self.small_score_average_max = self.small_score_average
 
-    def game_mechanics(self):  # GAME_MECH
+    def game_mechanics(self):
         self.constants.SCREEN.fill((0, 0, 0))
         self.draw_map()
         self.show_apple()
@@ -354,35 +354,16 @@ class GAME_DISPLAY:
         self.calculate_scores()
         self.show_info()
 
-    def store_state_action(self, state, action, next_state, reward):  # SNAKE_HEAD
-        # Create reward tensor
-        reward_tensor = torch.tensor([reward], device=self.constants.DEVICE)
-
-        # Create a transition
-        self.snake.memory.push(state, action, next_state, reward_tensor)
-
-    def soft_update_target_net(self):  # SNAKE_BRAIN
-        # Soft update of the target network's weights
-        target_net_state_dict = self.snake.target_net.state_dict()
-        policy_net_state_dict = self.snake.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[
-                key
-            ] * self.constants.TAU + target_net_state_dict[key] * (
-                1 - self.constants.TAU
-            )
-        self.snake.target_net.load_state_dict(target_net_state_dict)
-
-    def calculate_apple_reward(self) -> float:  # GAME_MECH
+    def calculate_apple_reward(self) -> float:
         return math.sqrt(
             self.maximum_apple_reward - self.snake.length / self.constants.MAP_SIZE**2
         )
 
-    def calculate_collision_reward(self) -> float:  # GAME_MECH
+    def calculate_collision_reward(self) -> float:
         # TODO Make bigger/smaller?
         return -((self.snake.length / self.constants.MAP_SIZE**2) ** 2)
 
-    def run_autonomous_game_loop(self):  # GAME_MECH
+    def run_autonomous_game_loop(self):
         state = None
         next_state = None
         truncated = False  # TODO: Necessary?
@@ -414,7 +395,7 @@ class GAME_DISPLAY:
                     observation, dtype=torch.float32, device=self.constants.DEVICE
                 ).unsqueeze(0)
 
-                self.store_state_action(state, action, next_state, reward)
+                self.snake.store_state_action(state, action, next_state, reward)
 
             # Get state and format it into a tensor
             if next_state != None:
@@ -445,7 +426,7 @@ class GAME_DISPLAY:
 
                 reward = self.calculate_collision_reward()
 
-                self.store_state_action(state, action, observation, reward)
+                self.snake.store_state_action(state, action, observation, reward)
 
                 # Adjust average score
                 # Must happen before reset map, depends on self.n_episodes
@@ -456,9 +437,10 @@ class GAME_DISPLAY:
 
                 terminated = True
 
-            self.soft_update_target_net()
+            self.snake.soft_update_target_net()
             # Perform one step of the optimization (on the policy network)
-            self.optimize_model()
+            self.snake.optimize_model()
+            self.n_batches += 1
 
             # One step done
             self.n_steps += 1
@@ -491,66 +473,7 @@ class GAME_DISPLAY:
             random_action = torch.tensor(random_array).max(0).indices.view(1, 1)
             return random_action
 
-    def optimize_model(self):  # Snake brain?
-        if len(self.snake.memory) < self.constants.BATCH_SIZE:
-            return
-        transitions = self.snake.memory.sample(self.constants.BATCH_SIZE)
-
-        # Transpose the batch
-        batch = self.snake.memory.Transition(*zip(*transitions))
-
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(
-            tuple(map(lambda s: s is not None, batch.next_state)),
-            device=self.constants.DEVICE,
-            dtype=torch.bool,
-        )
-        non_final_next_states = torch.cat(
-            [s for s in batch.next_state if s is not None]
-        )
-
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to policy_net
-        state_action_values = self.snake.policy_net(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based
-        # on the "older" target_net; selecting their best reward with max(1).values
-        # This is merged based on the mask, such that we'll have either the expected
-        # state value or 0 in case the state was final.
-        next_state_values = torch.zeros(
-            self.constants.BATCH_SIZE, device=self.constants.DEVICE
-        )
-        with torch.no_grad():
-            next_state_values[non_final_mask] = (
-                self.snake.target_net(non_final_next_states).max(1).values
-            )
-        # Compute the expected Q values
-        expected_state_action_values = (
-            next_state_values * self.constants.GAMMA
-        ) + reward_batch
-
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-        self.previous_loss = round(loss.item(), 2)
-
-        # Optimize the model
-        self.snake.optimizer.zero_grad()
-        loss.backward()
-
-        # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.snake.policy_net.parameters(), 100)
-        self.snake.optimizer.step()
-        self.n_batches += 1
-
-    def reset_map(self):  # GAME_MECH
+    def reset_map(self):
         """Reset the map, so pygame.init doesn't have to run every training loop"""
         self.reposition_apple()
         self.last_direction = "right"
