@@ -121,7 +121,6 @@ autonomous = True if input("Autonomous: ").lower() == "y" else False
 user_defined["autonomous"] = autonomous
 
 display = True if input("Display: ").lower() == "y" else False
-user_defined["display"] = display
 
 if not autonomous:
     snake_map = GAME_DISPLAY(user_defined, SNAKE_GAME_CONSTANTS)

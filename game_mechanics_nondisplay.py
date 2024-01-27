@@ -112,12 +112,12 @@ class GAME_NON_DISPLAY:
         apple_position = [self.apple_possition_x, self.apple_possition_y]
 
         head_x, head_y = self.snake.body[-1]
-        left_row = head_x
+        left_row = head_x - 1
         right_row = self.block_size - head_x
-        above_column = head_y
+        above_column = head_y - 1
         beneath_column = self.block_size - head_y
 
-        for body_indx in range(1, len(self.snake.body)):
+        for body_indx in range(0, len(self.snake.body) - 1):
             if self.snake.body[body_indx][1] == head_y:
                 horizontal_distance = self.snake.body[body_indx][0] - head_x
                 # Asumes the horizontal distance is not zero
@@ -393,15 +393,15 @@ class GAME_NON_DISPLAY:
         self.snake.optimizer.step()
         self.n_batches += 1
 
-    def reset_map(self):  # Change
+    def reset_map(self):
         """Reset the map, so pygame.init doesn't have to run every training loop"""
         self.reposition_apple()
-        self.last_direction = "right"
-        self.direction = "right"
         self.n_episodes += 1
 
         # Snake values
         self.snake.length = self.constants.START_LENGTH
+        self.snake.previous_direction = "right"
+        self.snake.direction = "right"
         self.snake.body = []
         self.snake.initiate_body()
 

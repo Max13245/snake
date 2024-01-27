@@ -10,7 +10,7 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
         self.body = []
         self.initiate_body()
 
-        self.previous_direction = None
+        self.previous_direction = "right"
         self.direction = "right"
 
     def initiate_body(self):
@@ -45,7 +45,7 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
     def move(self, apple_overlap):
         # Don't delete head when snake gets apple
         if not apple_overlap:
-            del self.body[-1]
+            del self.body[0]
 
     def wall_collision(self):
         body_x = self.body[-1][0]
@@ -58,7 +58,7 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
 
     def tangled(self):
         head_position = self.body[-1]
-        for body_indx in range(1, len(self.body)):
+        for body_indx in range(0, len(self.body) - 1):
             if self.body[body_indx] == head_position:
                 return True
         return False
