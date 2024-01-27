@@ -115,9 +115,6 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
         self.previous_direction = None
         self.direction = "right"
 
-    def create_limb(self):
-        pass
-
     def initiate_body(self):
         # Reverse range, so head is at the end of the list
         for i in range(self.length, 0, -1):
@@ -209,13 +206,14 @@ class GAME_NON_DISPLAY:
 
         self.show_information = True
 
-    def reposition_apple(self):  # GAME_MECH
+    def reposition_apple(self):
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
 
     def is_apple_overlap(self):
         for cords in self.snake.body:
             if cords == (self.apple_possition_x, self.apple_possition_y):
+                self.reposition_apple()
                 return True
         return False
 
@@ -265,7 +263,7 @@ class GAME_NON_DISPLAY:
             screen.blit(text, text_rect)
             text_y_position += text_rect.height + 5
 
-    def get_state(self):  # Change and more efficient
+    def get_state(self):
         """
         1. Head position                             2
         2. Apple position                            2
@@ -274,48 +272,37 @@ class GAME_NON_DISPLAY:
         5. Current direction                         1
         """
 
-        head_position = [
-            self.snake.body[0].x / self.x_blocks,
-            self.snake.body[0].y / self.y_blocks,
-        ]
+        head_position = [self.snake.body[-1][0], self.snake.body[-1][1]]
         apple_position = [self.apple_possition_x, self.apple_possition_y]
 
-        # TODO Funky code, probably inefficient, just testing something
-        up_distances = []
-        down_distances = []
-        left_distances = []
-        right_distances = []
+        head_x, head_y = self.snake.body[-1]
+        left_row = head_x
+        right_row = self.block_size - head_x
+        above_column = head_y
+        beneath_column = self.block_size - head_y
 
-        snake_head = self.snake.body[0]
-        for limb in self.snake.body[1:]:
-            if limb.x == snake_head.x:
-                vertical_distance = limb.y - snake_head.y
-                if vertical_distance < 0:
-                    up_distances.append(vertical_distance * -1)
-                elif vertical_distance > 0:
-                    down_distances.append(vertical_distance)
-            elif limb.y == snake_head.y:
-                horizontal_distance = limb.x - snake_head.x
-                if horizontal_distance < 0:
-                    left_distances.append(horizontal_distance * -1)
-                elif horizontal_distance > 0:
-                    right_distances.append(horizontal_distance)
+        for body_indx in range(1, len(self.snake.body)):
+            if self.snake.body[body_indx][1] == head_y:
+                horizontal_distance = self.snake.body[body_indx][0] - head_x
+                # Asumes the horizontal distance is not zero
+                if horizontal_distance > 0 and horizontal_distance < right_row:
+                    right_row = horizontal_distance
+                    continue
 
-        if len(up_distances) == 0:
-            up_distances.append(snake_head.y)
-        if len(down_distances) == 0:
-            down_distances.append(height - snake_head.y)
-        if len(left_distances) == 0:
-            left_distances.append(snake_head.x)
-        if len(right_distances) == 0:
-            right_distances.append(width - snake_head.x)
+                if abs(horizontal_distance) < left_row:
+                    left_row = abs(horizontal_distance)
+            elif self.snake.body[body_indx][0] == head_x:
+                vertical_distance = self.snake.body[body_indx][1] - head_y
+                # Asumes the vertical distance is not zero
+                if vertical_distance > 0 and vertical_distance < beneath_column:
+                    beneath_column = vertical_distance
+                    continue
 
-        distances = [
-            min(up_distances) / self.y_blocks,
-            min(down_distances) / self.y_blocks,
-            min(left_distances) / self.x_blocks,
-            min(right_distances) / self.x_blocks,
-        ]
+                if abs(vertical_distance) < above_column:
+                    above_column = abs(vertical_distance)
+
+        distances = [above_column, beneath_column, left_row, right_row]
+
         current_direction = ACTION_OPTIONS.index(self.last_direction)
 
         state = head_position + apple_position + distances + [current_direction]
@@ -900,7 +887,7 @@ class GAME_DISPLAY:
             pygame.display.update()
             clock.tick(60)
 
-    def get_state(self):  # GAME_MECH
+    def get_state(self):
         """
         1. Head position                             2
         2. Apple position                            2
