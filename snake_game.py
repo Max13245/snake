@@ -204,8 +204,6 @@ class GAME_NON_DISPLAY:
             2,
         )
 
-        self.show_information = True
-
     def reposition_apple(self):
         self.apple_possition_x = randint(0, (self.block_size - 1))
         self.apple_possition_y = randint(0, (self.block_size - 1))
@@ -250,19 +248,12 @@ class GAME_NON_DISPLAY:
             ("Loss", self.previous_loss),
         ] + ([("Threshold", self.random_threshold)] if self.use_threshold else [])
 
-    def show_info(self):  # Change to terminal
-        if not self.show_information:
-            return
-
+    def show_info(self):
         self.update_information_types()
-
-        text_x_position, text_y_position = 5, 5
+        print("-" * 50)
         for info in self.information_types:
-            text = font.render(f"{info[0]}: {info[1]}", True, BLACK)
-            text_rect = text.get_rect()
-            text_rect.topleft = (text_x_position, text_y_position)
-            screen.blit(text, text_rect)
-            text_y_position += text_rect.height + 5
+            print(f"{info[0]}{' ' * (30 - len(info[0]))} =    {info[1]}")
+        print("-" * 50)
 
     def get_state(self):
         """
@@ -315,9 +306,6 @@ class GAME_NON_DISPLAY:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 return True
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_h:
-                    self.show_information ^= True
         return False
 
     def get_apple_radius_reward(self):  # GAME_MECH
