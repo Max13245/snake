@@ -39,9 +39,9 @@ class DQN(nn.Module):
 
 
 class SNAKE_BRAIN:
-    def __init__(self, load_model, n_actions, lr, device):
+    def __init__(self, load_model, constants):
         if load_model:
-            self.policy_net = DQN(n_actions).to(device)
+            self.policy_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
             # TODO: Don't use try except (use handler for this anyway)
             try:
                 self.policy_net.load_state_dict(
@@ -53,10 +53,12 @@ class SNAKE_BRAIN:
                 )
             self.policy_net.eval()
         else:
-            self.policy_net = DQN(n_actions).to(device)
+            self.policy_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
 
-        self.target_net = DQN(n_actions).to(device)
+        self.target_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
-        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=lr, amsgrad=True)
+        self.optimizer = optim.AdamW(
+            self.policy_net.parameters(), lr=constants.LR, amsgrad=True
+        )
         self.memory = ReplayMemory(10000)

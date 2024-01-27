@@ -4,7 +4,7 @@ import pygame
 
 class SNAKE_DISPLAY(SNAKE_BRAIN):
     def __init__(self, size_x, size_y, load_model, constants) -> None:
-        super().__init__(load_model)
+        super().__init__(load_model, constants)
         self.constants = constants
 
         # Only create variables needed for current display setting

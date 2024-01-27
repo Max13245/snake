@@ -12,10 +12,9 @@ class GAME_DISPLAY:
     def __init__(self, user_defined, constants):
         self.constants = constants
         self.autonomous = user_defined["autonomous"]
-        self.display = user_defined["display"]
         self.x_blocks, self.y_blocks = (
-            constants.WIDTH / constants.size,
-            constants.HEIGHT / constants.size,
+            constants.WIDTH / constants.MAP_SIZE,
+            constants.HEIGHT / constants.MAP_SIZE,
         )
         self.block_size = constants.MAP_SIZE
         self.tiles = []
