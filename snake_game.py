@@ -124,7 +124,18 @@ class SNAKE_CALCULATE(SNAKE_BRAIN):
             body_position = (self.position[0] - i, self.position[1])
             self.body.append(body_position)
 
+    def correct_reverse(self):
+        if self.previous_direction == "up" and self.direction == "down":
+            self.direction == "up"
+        elif self.previous_direction == "right" and self.direction == "left":
+            self.direction == "right"
+        elif self.previous_direction == "down" and self.direction == "up":
+            self.direction == "down"
+        elif self.previous_direction == "left" and self.direction == "right":
+            self.direction == "left"
+
     def move_head(self):
+        self.correct_reverse()
         body_x = self.body[-1][0]
         body_y = self.body[-1][1]
         if self.direction == "up":
@@ -866,17 +877,6 @@ class GAME_NON_DISPLAY:
             self.snake.body[0].x % self.x_blocks == 0
             and self.snake.body[0].y % self.y_blocks == 0
         ):
-            return True
-        return False
-
-    def is_reverse(self, current, new):  # GAME_MECH
-        if current == "up" and new == "down":
-            return True
-        if current == "right" and new == "left":
-            return True
-        if current == "down" and new == "up":
-            return True
-        if current == "left" and new == "right":
             return True
         return False
 
