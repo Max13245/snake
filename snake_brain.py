@@ -48,7 +48,7 @@ class SNAKE_BRAIN:
 
         # TODO don't use absolute path
         self.handler = HANDLER(
-            "/Users/maxrijkers/Documents/Programs/snake/models",
+            "./models",
             load_model,
             self.policy_net,
         )

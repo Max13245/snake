@@ -140,7 +140,6 @@ for i_episode in range(N_EPISODES):
 # Only quit pygame after the entire training loop is done
 pygame.quit()
 
-# TODO: Adjust this info for snake AI
 snake_game.snake.handler.save_model(
     snake_game.snake.policy_net.state_dict(),
     {
