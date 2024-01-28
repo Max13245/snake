@@ -11,6 +11,7 @@ from snake_nondisplay import SNAKE_CALCULATE
 class GAME_NON_DISPLAY:
     def __init__(self, user_defined, constants):
         self.constants = constants
+        self.user_defined = user_defined
         self.block_size = constants.MAP_SIZE
 
         # This also creates the apple (tuple of coördinates)
@@ -146,7 +147,7 @@ class GAME_NON_DISPLAY:
             self.snake.handler.save_model(
                 self.snake.policy_net.state_dict(),
                 {
-                    "model name": "user_defined",
+                    "model name": self.user_defined["model_name"],
                     "batch size": self.constants.BATCH_SIZE,
                     "accuracy": None,
                     "epochs": self.constants.N_EPISODES,

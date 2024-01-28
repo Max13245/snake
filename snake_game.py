@@ -124,10 +124,9 @@ load_model = load_model if load_model != "" else None
 user_defined["load_model"] = load_model
 use_threshold = True if input("Threshold: ").lower() == "y" else False
 user_defined["threshold"] = use_threshold
-
-# TODO: Get model name from user
-# TODO: Adjust this info for snake AI
-model_name = "ai_model"
+model_name = input("Model name: ")
+model_name = model_name if model_name != "" else "Unnamed AI model"
+user_defined["model_name"] = model_name
 
 # Only init one time, since policy network is inside
 snake_game = (
@@ -142,10 +141,11 @@ for i_episode in range(N_EPISODES):
 # Only quit pygame after the entire training loop is done
 pygame.quit()
 
+# TODO: Adjust this info for snake AI
 snake_game.snake.handler.save_model(
     snake_game.snake.policy_net.state_dict(),
     {
-        "model name": model_name,
+        "model name": user_defined["model_name"],
         "batch size": BATCH_SIZE,
         "accuracy": None,
         "epochs": N_EPISODES,

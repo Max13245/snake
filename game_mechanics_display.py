@@ -10,6 +10,7 @@ from snake_display import SNAKE_DISPLAY
 class GAME_DISPLAY:
     def __init__(self, user_defined, constants):
         self.constants = constants
+        self.user_defined = user_defined
         self.autonomous = user_defined["autonomous"]
         self.x_blocks, self.y_blocks = (
             constants.WIDTH / constants.MAP_SIZE,
@@ -290,7 +291,7 @@ class GAME_DISPLAY:
                 self.snake.handler.save_model(
                     self.snake.policy_net.state_dict(),
                     {
-                        "model name": "user_defined",
+                        "model name": self.user_defined["model_name"],
                         "batch size": self.constants.BATCH_SIZE,
                         "accuracy": None,
                         "epochs": self.constants.N_EPISODES,
