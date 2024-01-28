@@ -140,10 +140,22 @@ class GAME_NON_DISPLAY:
         state = head_position + apple_position + distances + [current_direction]
         return np.array(state)
 
-    def check_quit_event(self):
+    def is_quit_event(self):
         if keyboard.is_pressed("q"):
-            return True
-        return False
+            # TODO: Don't load pygame for nondisplay
+            self.snake.handler.save_model(
+                self.snake.policy_net.state_dict(),
+                {
+                    "model name": "user_defined",
+                    "batch size": self.constants.BATCH_SIZE,
+                    "accuracy": None,
+                    "epochs": self.constants.N_EPISODES,
+                    "learning rate": self.constants.LR,
+                    "extra": None,
+                },
+            )
+            print("Saved as incomplete model")
+            exit()
 
     def get_apple_radius_reward(self):  # Same
         # If apple is recieved in this round then skip radius reward
@@ -249,9 +261,7 @@ class GAME_NON_DISPLAY:
             action = self.select_action(state)
             self.snake.direction = self.constants.ACTION_OPTIONS[action]
 
-            quit_event = self.check_quit_event()
-            if quit_event:
-                break
+            self.is_quit_event()
 
             # Game loop mechanics
             self.game_mechanics()
@@ -284,8 +294,6 @@ class GAME_NON_DISPLAY:
 
             if terminated or truncated:
                 break
-
-        return quit_event
 
     def select_action(self, state):  # Almost same
         sample = np.random.random()

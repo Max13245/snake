@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 import numpy as np
 import math
 import pygame
@@ -283,16 +282,27 @@ class GAME_DISPLAY:
     def AI_control(self, action):
         self.last_direction = self.constants.ACTION_OPTIONS[action]
 
-    def check_quit_event(self):
+    def is_event(self):
         # Check for quit event
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return True
+                self.snake.handler.save_model(
+                    self.snake.policy_net.state_dict(),
+                    {
+                        "model name": "user_defined",
+                        "batch size": self.constants.BATCH_SIZE,
+                        "accuracy": None,
+                        "epochs": self.constants.N_EPISODES,
+                        "learning rate": self.constants.LR,
+                        "extra": None,
+                    },
+                )
+                print("Saved as incomplete model")
+                exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_h:
                     self.show_information ^= True
-        return False
 
     def get_apple_radius_reward(self):
         # If apple is recieved in this round then skip radius reward
@@ -410,9 +420,7 @@ class GAME_DISPLAY:
             action = self.select_action(state)
             self.AI_control(action)
 
-            quit_event = self.check_quit_event()
-            if quit_event:
-                break
+            self.is_event()
 
             # Game loop mechanics
             self.game_mechanics()
@@ -447,8 +455,6 @@ class GAME_DISPLAY:
 
             if terminated or truncated:
                 break
-
-        return quit_event
 
     def select_action(self, state):  # ?
         sample = np.random.random()

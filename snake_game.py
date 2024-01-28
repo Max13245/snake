@@ -1,10 +1,10 @@
 import pygame
 import torch
-import os
 from dataclasses import dataclass
 
 from game_mechanics_display import GAME_DISPLAY
 from game_mechanics_nondisplay import GAME_NON_DISPLAY
+
 
 pygame.init()
 pygame.display.set_caption("Snake")
@@ -102,13 +102,6 @@ SNAKE_GAME_CONSTANTS = CONSTANTS(
 )
 
 
-def get_n_models(path):
-    n_models = len(
-        [name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))]
-    )
-    return n_models
-
-
 # All user defined parameters (later altered by user)
 user_defined = {
     "autonomous": False,
@@ -116,55 +109,49 @@ user_defined = {
     "threshold": False,
 }
 
-
 autonomous = True if input("Autonomous: ").lower() == "y" else False
 user_defined["autonomous"] = autonomous
 
 display = True if input("Display: ").lower() == "y" else False
 
 if not autonomous:
-    snake_map = GAME_DISPLAY(user_defined, SNAKE_GAME_CONSTANTS)
-    snake_map.run_user_game_loop()
+    snake_game = GAME_DISPLAY(user_defined, SNAKE_GAME_CONSTANTS)
+    snake_game.run_user_game_loop()
     quit()
 
 load_model = input("Load model: ")
+load_model = load_model if load_model != "" else None
 user_defined["load_model"] = load_model
 use_threshold = True if input("Threshold: ").lower() == "y" else False
 user_defined["threshold"] = use_threshold
 
+# TODO: Get model name from user
+# TODO: Adjust this info for snake AI
+model_name = "ai_model"
 
 # Only init one time, since policy network is inside
-snake_map = (
+snake_game = (
     GAME_DISPLAY(user_defined, SNAKE_GAME_CONSTANTS)
     if display
     else GAME_NON_DISPLAY(user_defined, SNAKE_GAME_CONSTANTS)
 )
 
 for i_episode in range(N_EPISODES):
-    # Initialize the environment and get it's state
-    # TODO: Maybe find something else for quit_event variable chain
-    quit_event = snake_map.run_autonomous_game_loop()
-
-    # Don't run again in case of quit_event
-    if quit_event:
-        break
+    snake_game.run_autonomous_game_loop()
 
 # Only quit pygame after the entire training loop is done
 pygame.quit()
 
-# Save model TODO: Use handler (handler need swap model function)
-models_path = "./models/"
-n_models = get_n_models(models_path)
-
-# Add suffix when model has not completed training
-if quit_event:
-    print("Saved as incomplete model")
-    model_suffix = "_incomplete"
-else:
-    print("Saved as complete model")
-    model_suffix = ""
-
-torch.save(
-    snake_map.snake.policy_net.state_dict(),
-    f"{models_path}model_{n_models}{model_suffix}",
+snake_game.snake.handler.save_model(
+    snake_game.snake.policy_net.state_dict(),
+    {
+        "model name": model_name,
+        "batch size": BATCH_SIZE,
+        "accuracy": None,
+        "epochs": N_EPISODES,
+        "learning rate": LR,
+        "extra": None,
+    },
 )
+
+print("Saved as complete model")

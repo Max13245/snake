@@ -5,6 +5,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+# To organize files
+from model_organizer.organizer import HANDLER
+
 
 class ReplayMemory(object):
     def __init__(self, capacity):
@@ -41,8 +44,16 @@ class DQN(nn.Module):
 class SNAKE_BRAIN:
     def __init__(self, load_model, constants):
         self.constants = constants
+        self.policy_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
+
+        # TODO don't use absolute path
+        self.handler = HANDLER(
+            "/Users/maxrijkers/Documents/Programs/snake/models",
+            load_model,
+            self.policy_net,
+        )
+
         if load_model:
-            self.policy_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
             # TODO: Don't use try except (use handler for this anyway)
             try:
                 self.policy_net.load_state_dict(
@@ -53,8 +64,6 @@ class SNAKE_BRAIN:
                     torch.load(f"./models/model_{load_model}_incomplete")
                 )
             self.policy_net.eval()
-        else:
-            self.policy_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
 
         self.target_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
         self.target_net.load_state_dict(self.policy_net.state_dict())
