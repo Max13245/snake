@@ -66,15 +66,7 @@ class SNAKE_BRAIN:
         )
 
         if load_model:
-            # TODO: Don't use try except (use handler for this anyway)
-            try:
-                self.policy_net.load_state_dict(
-                    torch.load(f"./models/model_{load_model}")
-                )
-            except:
-                self.policy_net.load_state_dict(
-                    torch.load(f"./models/model_{load_model}_incomplete")
-                )
+            self.policy_net = self.handler.load_ai_model(load_model)
             self.policy_net.eval()
 
         self.target_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
