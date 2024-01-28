@@ -1,0 +1,13 @@
+Project_1
+Datetime: 28/01/2024 20:46:13
+Model structure: 9x128x128x4
+
+Negative reward test
+Datetime: 28/01/2024 21:28:06
+Model name: Negative reward test
+Batch size: 128
+Episodes: 1024
+Learning rate: 0.0001
+Complete: False
+Top score: 49
+Top sas: 21.77

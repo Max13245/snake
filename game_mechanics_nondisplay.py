@@ -221,8 +221,7 @@ class GAME_NON_DISPLAY:
         )
 
     def calculate_collision_reward(self) -> float:  # Same
-        # TODO Make bigger/smaller?
-        return -((self.snake.length / self.constants.MAP_SIZE**2) ** 2)
+        return max(-((self.snake.length / self.constants.MAP_SIZE**2) ** 2), -0.01)
 
     def run_autonomous_game_loop(self):
         state = None

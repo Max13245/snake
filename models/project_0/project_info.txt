@@ -1,0 +1,23 @@
+Project_0
+Datetime: 28/01/2024 12:58:39
+Model structure: 9x128x128x4
+
+Base model
+Datetime: 28/01/2024 13:52:20
+Model name: Base model
+Batch size: 128
+Episodes: 1024
+Learning rate: 0.0001
+Complete: True
+Top score: 54
+Top sas: 21.63
+
+Base model_0x_retrained_0
+Datetime: 28/01/2024 13:56:19
+Model name: Unnamed AI model
+Batch size: 128
+Episodes: 1024
+Learning rate: 0.0001
+Complete: False
+Top score: 3
+Top sas: 0.07
