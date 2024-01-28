@@ -144,17 +144,10 @@ class GAME_NON_DISPLAY:
     def is_quit_event(self):
         if keyboard.is_pressed("q"):
             # TODO: Don't load pygame for nondisplay
+            self.refresh_model_info()
             self.snake.handler.save_model(
                 self.snake.policy_net.state_dict(),
-                {
-                    "model name": self.user_defined["model_name"],
-                    "batch size": self.constants.BATCH_SIZE,
-                    "episodes": self.constants.N_EPISODES,
-                    "learning rate": self.constants.LR,
-                    "complete": False,
-                    "top score": self.top_score,
-                    "top SAS": self.small_score_average_max,
-                },
+                self.model_info,
             )
             print("Saved as incomplete model")
             exit()
@@ -183,6 +176,17 @@ class GAME_NON_DISPLAY:
         self.previous_apple_distance = distance
         return reward
 
+    def refresh_model_info(self, affix=""):
+        self.model_info = {
+            "model name": self.user_defined["model_name"] + affix,
+            "batch size": self.constants.BATCH_SIZE,
+            "episodes": self.constants.N_EPISODES,
+            "learning rate": self.constants.LR,
+            "complete": False,
+            "top score": self.top_score,
+            "top SAS": self.small_score_average_max,
+        }
+
     def calculate_scores(self):  # Same
         self.score = self.snake.length - self.constants.START_LENGTH
         if self.score > self.top_score:
@@ -208,6 +212,10 @@ class GAME_NON_DISPLAY:
 
         if self.small_score_average > self.small_score_average_max:
             self.small_score_average_max = self.small_score_average
+            self.refresh_model_info(affix="_top_SAS")
+            self.snake.handler.swap_model(
+                self.snake.policy_net.state_dict(), self.model_info
+            )
 
     def game_mechanics(self):
         self.move_snake()
