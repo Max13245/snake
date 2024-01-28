@@ -53,6 +53,18 @@ class SNAKE_BRAIN:
             self.policy_net,
         )
 
+        self.handler.adjust_required_info(
+            [
+                "model name",
+                "batch size",
+                "episodes",
+                "learning rate",
+                "complete",
+                "top score",
+                "top SAS",
+            ]
+        )
+
         if load_model:
             # TODO: Don't use try except (use handler for this anyway)
             try:

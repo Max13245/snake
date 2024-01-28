@@ -111,7 +111,6 @@ user_defined = {
 
 autonomous = True if input("Autonomous: ").lower() == "y" else False
 user_defined["autonomous"] = autonomous
-
 display = True if input("Display: ").lower() == "y" else False
 
 if not autonomous:
@@ -147,10 +146,11 @@ snake_game.snake.handler.save_model(
     {
         "model name": user_defined["model_name"],
         "batch size": BATCH_SIZE,
-        "accuracy": None,
-        "epochs": N_EPISODES,
+        "episodes": N_EPISODES,
         "learning rate": LR,
-        "extra": None,
+        "complete": True,
+        "top score": snake_game.top_score,
+        "top SAS": snake_game.small_score_average_max,
     },
 )
 

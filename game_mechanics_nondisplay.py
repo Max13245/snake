@@ -149,10 +149,11 @@ class GAME_NON_DISPLAY:
                 {
                     "model name": self.user_defined["model_name"],
                     "batch size": self.constants.BATCH_SIZE,
-                    "accuracy": None,
-                    "epochs": self.constants.N_EPISODES,
+                    "episodes": self.constants.N_EPISODES,
                     "learning rate": self.constants.LR,
-                    "extra": None,
+                    "complete": False,
+                    "top score": self.top_score,
+                    "top SAS": self.small_score_average_max,
                 },
             )
             print("Saved as incomplete model")
