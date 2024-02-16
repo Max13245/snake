@@ -61,7 +61,7 @@ class GAME_DISPLAY:
 
         self.show_information = True
 
-    def create_map(self):  # MAP
+    def create_map(self):
         for i in range(self.block_size):
             row = []
             for j in range(self.block_size):
@@ -84,12 +84,12 @@ class GAME_DISPLAY:
 
             self.tiles.append(row)
 
-    def draw_map(self):  # MAP
+    def draw_map(self):
         for row in self.tiles:
             for tile in row:
                 pygame.draw.rect(self.constants.SCREEN, tile[1], tile[0])
 
-    def show_apple(self):  # MAP
+    def show_apple(self):
         self.constants.SCREEN.blit(
             self.apple, self.tiles[self.apple_possition_x][self.apple_possition_y][0]
         )
@@ -108,7 +108,7 @@ class GAME_DISPLAY:
             return True
         return False
 
-    def create_apple(self):  # MAP
+    def create_apple(self):
         apple_img = pygame.image.load("apple.png")
         return pygame.transform.scale(
             apple_img, (int(self.x_blocks), int(self.y_blocks))
@@ -175,7 +175,7 @@ class GAME_DISPLAY:
                 ("Score", self.score),
             ]
 
-    def show_info(self):  # MAP
+    def show_info(self):
         if not self.show_information:
             return
 
@@ -191,7 +191,7 @@ class GAME_DISPLAY:
             self.constants.SCREEN.blit(text, text_rect)
             text_y_position += text_rect.height + 5
 
-    def user_control(self):  # MAP
+    def user_control(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -239,7 +239,7 @@ class GAME_DISPLAY:
         ]
         apple_position = [self.apple_possition_x, self.apple_possition_y]
 
-        # TODO Funky code, probably inefficient, just testing something
+        # TODO Funky code, probably inefficient, is more efficiently done in non display
         up_distances = []
         down_distances = []
         left_distances = []
@@ -309,9 +309,11 @@ class GAME_DISPLAY:
         if not self.previous_apple_distance:
             reward = 0
         elif self.previous_apple_distance < distance:
-            # Return negative reward
-            # Must as big as positive reward, otherwise snake
-            # might circle around apple to maximize reward
+            """
+            Return negative reward, must as big as positive
+            reward, otherwise snake might circle around apple
+            to maximize reward
+            """
             reward = -self.maximum_apple_radius_reward
         elif distance < self.previous_apple_distance:
             # Return positive reward
@@ -465,7 +467,7 @@ class GAME_DISPLAY:
             if terminated or truncated:
                 break
 
-    def select_action(self, state):  # ?
+    def select_action(self, state):
         sample = np.random.random()
         step_threshold = self.constants.EPS_END + (
             self.constants.EPS_START - self.constants.EPS_END

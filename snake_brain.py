@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-# To organize files
+# To organize files and keep track of information, not nesseccary, but usefull
 from model_organizer.organizer import HANDLER
 
 
@@ -46,7 +46,6 @@ class SNAKE_BRAIN:
         self.constants = constants
         self.policy_net = DQN(constants.N_ACTIONS).to(constants.DEVICE)
 
-        # TODO don't use absolute path
         self.handler = HANDLER(
             "./models",
             load_model,
@@ -105,7 +104,6 @@ class SNAKE_BRAIN:
         batch = self.memory.Transition(*zip(*transitions))
 
         # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
         non_final_mask = torch.tensor(
             tuple(map(lambda s: s is not None, batch.next_state)),
             device=self.constants.DEVICE,
@@ -119,16 +117,10 @@ class SNAKE_BRAIN:
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
 
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to policy_net
+        # Get the actions from current policy net from stored state
         state_action_values = self.policy_net(state_batch).gather(1, action_batch)
 
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based
-        # on the "older" target_net; selecting their best reward with max(1).values
-        # This is merged based on the mask, such that we'll have either the expected
-        # state value or 0 in case the state was final.
+        # Get actions with the highest Q-value from the target net
         next_state_values = torch.zeros(
             self.constants.BATCH_SIZE, device=self.constants.DEVICE
         )
@@ -136,6 +128,7 @@ class SNAKE_BRAIN:
             next_state_values[non_final_mask] = (
                 self.target_net(non_final_next_states).max(1).values
             )
+
         # Compute the expected Q values
         expected_state_action_values = (
             next_state_values * self.constants.GAMMA

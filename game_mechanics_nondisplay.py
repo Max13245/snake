@@ -152,7 +152,7 @@ class GAME_NON_DISPLAY:
             print("Saved as incomplete model")
             exit()
 
-    def get_apple_radius_reward(self):  # Same
+    def get_apple_radius_reward(self):
         # If apple is recieved in this round then skip radius reward
         if self.apple_overlap:
             return 0
@@ -163,9 +163,11 @@ class GAME_NON_DISPLAY:
         if not self.previous_apple_distance:
             reward = 0
         elif self.previous_apple_distance < distance:
-            # Return negative reward
-            # Must as big as positive reward, otherwise snake
-            # might circle around apple to maximize reward
+            """
+            Return negative reward, must as big as positive
+            reward, otherwise snake might circle around apple
+            to maximize reward
+            """
             reward = -self.maximum_apple_radius_reward
         elif distance < self.previous_apple_distance:
             # Return positive reward
@@ -187,12 +189,12 @@ class GAME_NON_DISPLAY:
             "top SAS": self.small_score_average_max,
         }
 
-    def calculate_scores(self):  # Same
+    def calculate_scores(self):
         self.score = self.snake.length - self.constants.START_LENGTH
         if self.score > self.top_score:
             self.top_score = self.score
 
-    def calculate_averages(self):  # Same
+    def calculate_averages(self):
         self.average_score = round(
             (self.average_score * (self.n_episodes - 1) + self.score) / self.n_episodes,
             2,
@@ -223,12 +225,12 @@ class GAME_NON_DISPLAY:
         self.calculate_scores()
         self.show_info()
 
-    def calculate_apple_reward(self) -> float:  # Same
+    def calculate_apple_reward(self) -> float:
         return math.sqrt(
             self.maximum_apple_reward - self.snake.length / self.constants.MAP_SIZE**2
         )
 
-    def calculate_collision_reward(self) -> float:  # Same
+    def calculate_collision_reward(self) -> float:
         return max(-((self.snake.length / self.constants.MAP_SIZE**2) ** 2), -0.01)
 
     def run_autonomous_game_loop(self):
@@ -304,7 +306,7 @@ class GAME_NON_DISPLAY:
             if terminated or truncated:
                 break
 
-    def select_action(self, state):  # Almost same
+    def select_action(self, state):
         sample = np.random.random()
         step_threshold = self.constants.EPS_END + (
             self.constants.EPS_START - self.constants.EPS_END

@@ -47,7 +47,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class CONSTANTS:
     WIDTH: int
     HEIGHT: int
-    SCREEN: pygame.display.set_mode  # Screen object
+    SCREEN: pygame.display.set_mode
     CLOCK: pygame.time.Clock
 
     GREEN: tuple
